@@ -2,6 +2,7 @@ import { useId } from "react";
 import type { ArtTheme } from "@/lib/catalog/destinations";
 import { hashString } from "@/lib/flights/mock/random";
 import { cn } from "@/lib/utils";
+import { hasPhoto } from "@/lib/catalog/photo-articles";
 
 interface DestinationArtProps {
   code: string;
@@ -11,14 +12,27 @@ interface DestinationArtProps {
   className?: string;
   /** Show the large faded airport code. */
   showCode?: boolean;
+  /** Overlay the destination's real photo (when one exists); the illustration shows until it loads. */
+  photo?: boolean;
+  /** Rough rendered width in px, to pick a sensible photo size. */
+  photoWidth?: number;
 }
 
 /**
- * Original, dependency-free travel illustration: a gradient sky with a motif
- * for the destination's character. Swap for photography later by adding an
- * image URL to the destination catalog.
+ * Destination visual: a real photo (Wikimedia Commons, via /api/photos) drawn
+ * over an original gradient illustration, which stays visible while the photo
+ * loads or if there isn't one.
  */
-export function DestinationArt({ code, theme, from, to, className, showCode = true }: DestinationArtProps) {
+export function DestinationArt({
+  code,
+  theme,
+  from,
+  to,
+  className,
+  showCode = true,
+  photo = true,
+  photoWidth = 500,
+}: DestinationArtProps) {
   const id = useId().replace(/:/g, "");
   const seed = hashString(code);
   // Keep the sun clear of the top corners, where cards overlay badges and buttons.
@@ -60,6 +74,14 @@ export function DestinationArt({ code, theme, from, to, className, showCode = tr
         strokeLinecap="round"
       />
       <Motif theme={theme} seed={seed} />
+      {photo && hasPhoto(code) && (
+        <image
+          href={`/api/photos/${code}?w=${photoWidth}`}
+          width="400"
+          height="240"
+          preserveAspectRatio="xMidYMid slice"
+        />
+      )}
     </svg>
   );
 }

@@ -302,7 +302,7 @@ function DestinationThumb({ code, photo, alt }: { code: string; photo?: Photo; a
         // eslint-disable-next-line @next/next/no-img-element -- served straight from Wikimedia's CDN
         <img src={photo.src} alt={alt} loading="lazy" className="size-full object-cover transition-transform duration-300 group-hover:scale-110" />
       ) : art ? (
-        <DestinationArt code={code} theme={art.theme} from={art.from} to={art.to} showCode={false} className="size-full" />
+        <DestinationArt code={code} theme={art.theme} from={art.from} to={art.to} showCode={false} photo={false} className="size-full" />
       ) : null}
     </span>
   );

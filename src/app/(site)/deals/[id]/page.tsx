@@ -155,7 +155,7 @@ export default async function DealPage({ params, searchParams }: PageProps<"/dea
           {/* Hero */}
           <section className="overflow-hidden rounded-[2rem] border bg-card shadow-card">
             <div className="relative h-48 sm:h-64">
-              <DestinationArtFor code={deal.destination.code} />
+              <DestinationArtFor code={deal.destination.code} photoWidth={960} />
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
               <div className="absolute top-4 left-4 flex flex-wrap gap-2">
                 <DealRatingBadge rating={deal.rating} className="shadow-sm" />

@@ -1,4 +1,5 @@
 import "server-only";
+import { DESTINATION_ARTICLES } from "@/lib/catalog/photo-articles";
 
 /**
  * Real photography from Wikipedia / Wikimedia Commons. Every image used is
@@ -19,43 +20,6 @@ export interface Photo {
   /** Commons file page with full attribution. */
   sourceUrl: string;
 }
-
-/** Wikipedia articles whose lead photo represents each destination well. */
-const DESTINATION_ARTICLES: Record<string, string> = {
-  DOH: "Museum of Islamic Art, Doha",
-  DXB: "Burj Khalifa",
-  AUH: "Sheikh Zayed Grand Mosque",
-  MCT: "Sultan Qaboos Grand Mosque",
-  CAI: "Giza pyramid complex",
-  IST: "Hagia Sophia",
-  TBS: "Narikala",
-  GYD: "Flame Towers",
-  LHR: "Tower Bridge",
-  CDG: "Eiffel Tower",
-  AMS: "Canals of Amsterdam",
-  FCO: "Colosseum",
-  BCN: "Sagrada Família",
-  LIS: "Belém Tower",
-  PRG: "Charles Bridge",
-  ATH: "Acropolis of Athens",
-  BOM: "Gateway of India",
-  DEL: "India Gate",
-  CMB: "Gangaramaya Temple",
-  MLE: "Malé",
-  KTM: "Boudhanath",
-  BKK: "Wat Arun",
-  HKT: "Phi Phi Islands",
-  SIN: "Marina Bay Sands",
-  KUL: "Petronas Towers",
-  DPS: "Tanah Lot",
-  HKG: "Victoria Harbour",
-  NRT: "Tokyo Tower",
-  SYD: "Sydney Opera House",
-  ZNZ: "Stone Town",
-  CPT: "Table Mountain",
-  JFK: "Statue of Liberty",
-  LAX: "Hollywood Sign",
-};
 
 export const AIRPLANE_ARTICLE = "Airbus A350";
 

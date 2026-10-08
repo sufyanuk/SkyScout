@@ -35,6 +35,7 @@ export function Footer() {
             { href: "/favorites", label: "Saved flights" },
             { href: "/dashboard", label: "Dashboard" },
             { href: "/signup", label: "Create an account" },
+            { href: "/photo-credits", label: "Photo credits" },
           ]}
         />
       </div>
