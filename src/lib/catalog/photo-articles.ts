@@ -1,5 +1,5 @@
-/** Wikipedia articles whose lead photo represents each destination well. */
-export const DESTINATION_ARTICLES: Record<string, string> = {
+/** Wikipedia articles whose lead photo represents each destination well; alternatives are tried in order. */
+export const DESTINATION_ARTICLES: Record<string, string | string[]> = {
   DOH: "Museum of Islamic Art, Doha",
   DXB: "Burj Khalifa",
   AUH: "Sheikh Zayed Grand Mosque",
@@ -10,7 +10,7 @@ export const DESTINATION_ARTICLES: Record<string, string> = {
   GYD: "Flame Towers",
   LHR: "Tower Bridge",
   CDG: "Eiffel Tower",
-  AMS: "Canals of Amsterdam",
+  AMS: ["Canals of Amsterdam", "Rijksmuseum", "Amsterdam"],
   FCO: "Colosseum",
   BCN: "Sagrada Família",
   LIS: "Belém Tower",
@@ -24,7 +24,7 @@ export const DESTINATION_ARTICLES: Record<string, string> = {
   BKK: "Wat Arun",
   HKT: "Phi Phi Islands",
   SIN: "Marina Bay Sands",
-  KUL: "Petronas Towers",
+  KUL: ["Petronas Towers", "Kuala Lumpur Tower", "Kuala Lumpur"],
   DPS: "Tanah Lot",
   HKG: "Victoria Harbour",
   NRT: "Tokyo Tower",
@@ -34,5 +34,8 @@ export const DESTINATION_ARTICLES: Record<string, string> = {
   JFK: "Statue of Liberty",
   LAX: "Hollywood Sign",
 };
+
+/** Candidate articles for a destination, best first. */
+export const articlesFor = (code: string): string[] => [DESTINATION_ARTICLES[code] ?? []].flat();
 
 export const hasPhoto = (code: string) => code in DESTINATION_ARTICLES;

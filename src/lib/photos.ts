@@ -1,5 +1,5 @@
 import "server-only";
-import { DESTINATION_ARTICLES } from "@/lib/catalog/photo-articles";
+import { articlesFor } from "@/lib/catalog/photo-articles";
 
 /**
  * Real photography from Wikipedia / Wikimedia Commons. Every image used is
@@ -117,15 +117,14 @@ async function photosForArticles(titles: string[], width: number): Promise<Map<s
 
 /** Photos for destination airports (IATA codes); missing ones are omitted. */
 export async function getDestinationPhotos(codes: string[], width = 480): Promise<Record<string, Photo>> {
-  const wanted = codes.filter((c) => DESTINATION_ARTICLES[c]);
+  const wanted = codes.filter((c) => articlesFor(c).length > 0);
   if (wanted.length === 0) return {};
-  const byTitle = await photosForArticles(
-    wanted.map((c) => DESTINATION_ARTICLES[c]),
-    width,
-  );
+  const byTitle = await photosForArticles([...new Set(wanted.flatMap(articlesFor))], width);
   const out: Record<string, Photo> = {};
   for (const c of wanted) {
-    const photo = byTitle.get(DESTINATION_ARTICLES[c]);
+    const photo = articlesFor(c)
+      .map((t) => byTitle.get(t))
+      .find(Boolean);
     if (photo) out[c] = photo;
   }
   return out;
