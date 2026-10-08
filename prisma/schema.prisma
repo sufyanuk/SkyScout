@@ -1,0 +1,289 @@
+// SkyScout database schema.
+//
+// Reference data (airports, destinations) and deal snapshots live here so that
+// favourites, alerts and price history survive a change of flight-data
+// provider. Live search results themselves come from the FlightSearchProvider
+// (see src/lib/flights) and are only persisted when a user saves one.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Auth (Auth.js / NextAuth) ────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  /// bcrypt hash. Null for users who only sign in with an OAuth provider.
+  passwordHash  String?
+  /// IATA code of the user's preferred departure airport.
+  homeAirport   String?   @default("DOH")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts    Account[]
+  sessions    Session[]
+  favorites   Favorite[]
+  priceAlerts PriceAlert[]
+  searches    Search[]
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+// ─── Reference data ───────────────────────────────────────────────────────────
+
+model Airport {
+  /// IATA code, e.g. "DOH".
+  code        String @id
+  name        String
+  city        String
+  country     String
+  countryCode String
+  latitude    Float
+  longitude   Float
+  timezone    String
+  region      String
+
+  destination      Destination?
+  departingDeals   FlightDeal[]   @relation("DealOrigin")
+  arrivingDeals    FlightDeal[]   @relation("DealDestination")
+  historyAsOrigin  PriceHistory[] @relation("HistoryOrigin")
+  historyAsArrival PriceHistory[] @relation("HistoryDestination")
+
+  @@index([city])
+  @@index([countryCode])
+}
+
+model Destination {
+  id          String   @id @default(cuid())
+  /// URL slug, e.g. "bangkok" → /destinations/bangkok
+  slug        String   @unique
+  city        String
+  country     String
+  airportCode String   @unique
+  summary     String
+  tags        String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  airport Airport @relation(fields: [airportCode], references: [code])
+
+  @@index([country])
+}
+
+// ─── Deals, favourites, alerts ────────────────────────────────────────────────
+
+enum CabinClass {
+  ECONOMY
+  PREMIUM_ECONOMY
+  BUSINESS
+  FIRST
+}
+
+/// A snapshot of a fare as returned by the flight provider. Created when a user
+/// saves a deal (and by the seed script) so favourites keep working after the
+/// provider stops returning that exact fare.
+model FlightDeal {
+  /// Provider-issued deal id (stable for the mock provider).
+  id              String     @id
+  provider        String
+  originCode      String
+  destinationCode String
+  departureDate   DateTime   @db.Date
+  returnDate      DateTime?  @db.Date
+  airlineCode     String
+  airlineName     String
+  stops           Int
+  durationMinutes Int
+  cabin           CabinClass @default(ECONOMY)
+  /// Per-traveller price in whole currency units.
+  price           Int
+  typicalPrice    Int?
+  currency        String     @default("USD")
+  /// Full itinerary as returned by the provider (segments, baggage, fare rules).
+  data            Json
+  fetchedAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  origin      Airport    @relation("DealOrigin", fields: [originCode], references: [code])
+  destination Airport    @relation("DealDestination", fields: [destinationCode], references: [code])
+  favorites   Favorite[]
+
+  @@index([originCode, price])
+  @@index([destinationCode])
+  @@index([departureDate])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  dealId    String
+  createdAt DateTime @default(now())
+
+  user User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deal FlightDeal @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dealId])
+  @@index([userId, createdAt])
+}
+
+enum AlertStatus {
+  ACTIVE
+  TRIGGERED
+  PAUSED
+  DELETED
+}
+
+enum DateFlexibility {
+  EXACT
+  PLUS_MINUS_3
+  ANY
+}
+
+enum TripDuration {
+  ANY
+  WEEKEND
+  SHORT
+  WEEK
+  TWO_WEEKS
+}
+
+model PriceAlert {
+  id              String          @id @default(cuid())
+  userId          String
+  originCode      String
+  /// Null means "anywhere".
+  destinationCode String?
+  maxPrice        Int
+  currency        String          @default("USD")
+  dateFlexibility DateFlexibility @default(ANY)
+  /// Only used with EXACT / PLUS_MINUS_3.
+  departureDate   DateTime?       @db.Date
+  tripDuration    TripDuration    @default(ANY)
+  /// Null = any number of stops.
+  maxStops        Int?
+  cabin           CabinClass      @default(ECONOMY)
+  status          AlertStatus     @default(ACTIVE)
+  lastCheckedAt   DateTime?
+  lastSeenPrice   Int?
+  triggeredAt     DateTime?
+  triggeredPrice  Int?
+  triggeredDealId String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  events AlertEvent[]
+
+  @@index([userId, status])
+  @@index([status, lastCheckedAt])
+}
+
+enum AlertEventType {
+  CREATED
+  CHECKED
+  TRIGGERED
+  PAUSED
+  RESUMED
+  DELETED
+}
+
+/// Audit trail powering the "Alert history" view.
+model AlertEvent {
+  id        String         @id @default(cuid())
+  alertId   String
+  type      AlertEventType
+  price     Int?
+  dealId    String?
+  message   String
+  createdAt DateTime       @default(now())
+
+  alert PriceAlert @relation(fields: [alertId], references: [id], onDelete: Cascade)
+
+  @@index([alertId, createdAt])
+}
+
+// ─── Search history & price history ───────────────────────────────────────────
+
+model Search {
+  id            String    @id @default(cuid())
+  /// Null for anonymous searches (kept for aggregate stats only).
+  userId        String?
+  originCode    String
+  /// Null means "anywhere".
+  destination   String?
+  departureDate DateTime? @db.Date
+  returnDate    DateTime? @db.Date
+  /// The full query string so the search can be re-run with one click.
+  query         String
+  resultCount   Int
+  cheapestPrice Int?
+  createdAt     DateTime  @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([originCode, createdAt])
+}
+
+/// One observed lowest fare per route, cabin and day. Filled by the seed script
+/// and from live searches, so history accumulates with any provider.
+model PriceHistory {
+  id              String     @id @default(cuid())
+  originCode      String
+  destinationCode String
+  cabin           CabinClass @default(ECONOMY)
+  observedOn      DateTime   @db.Date
+  price           Int
+  currency        String     @default("USD")
+
+  origin      Airport @relation("HistoryOrigin", fields: [originCode], references: [code])
+  destination Airport @relation("HistoryDestination", fields: [destinationCode], references: [code])
+
+  @@unique([originCode, destinationCode, cabin, observedOn])
+  @@index([destinationCode])
+}

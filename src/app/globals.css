@@ -1,0 +1,145 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/*
+ * SkyScout design tokens (shadcn/ui-compatible names).
+ * Palette: deep "night flight" ink, a confident scout blue for actions,
+ * a sunrise coral for deal highlights and a fresh green for savings.
+ */
+:root {
+  --radius: 1rem;
+  --background: #f7f8fb;
+  --foreground: #0b1324;
+  --card: #ffffff;
+  --card-foreground: #0b1324;
+  --popover: #ffffff;
+  --popover-foreground: #0b1324;
+  --primary: #2348f0;
+  --primary-foreground: #ffffff;
+  --secondary: #eef1f8;
+  --secondary-foreground: #0b1324;
+  --muted: #f0f2f7;
+  --muted-foreground: #5d6679;
+  --accent: #eef2ff;
+  --accent-foreground: #1b37c4;
+  --destructive: #dc2626;
+  --border: #e3e7ef;
+  --input: #dde2ec;
+  --ring: #2348f0;
+  --sunrise: #ff6a3d;
+  --sunrise-soft: #fff1ec;
+  --savings: #0b8a5f;
+  --savings-soft: #e6f6ef;
+  --sky: #e8efff;
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-instrument-serif), ui-serif, Georgia, serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sunrise: var(--sunrise);
+  --color-sunrise-soft: var(--sunrise-soft);
+  --color-savings: var(--savings);
+  --color-savings-soft: var(--savings-soft);
+  --color-sky: var(--sky);
+
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 4px);
+  --radius-lg: calc(var(--radius) - 2px);
+  --radius-xl: var(--radius);
+  --radius-2xl: calc(var(--radius) + 6px);
+  --radius-3xl: calc(var(--radius) + 14px);
+
+  --shadow-card: 0 1px 2px rgb(11 19 36 / 0.04), 0 6px 24px -8px rgb(11 19 36 / 0.08);
+  --shadow-lift: 0 2px 4px rgb(11 19 36 / 0.04), 0 18px 40px -12px rgb(11 19 36 / 0.18);
+  --shadow-float: 0 24px 64px -16px rgb(17 35 120 / 0.28);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "ss01", "cv11";
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary;
+  }
+  ::selection {
+    @apply bg-primary/15;
+  }
+  /* Keep the calendar icon of native date inputs clickable and on-brand. */
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.55;
+  }
+}
+
+@utility container-page {
+  @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+}
+
+@utility text-balance {
+  text-wrap: balance;
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Soft horizon gradient used behind hero sections. */
+@utility bg-horizon {
+  background:
+    radial-gradient(1200px 500px at 85% -10%, rgb(255 106 61 / 0.16), transparent 60%),
+    radial-gradient(900px 500px at 0% 0%, rgb(35 72 240 / 0.14), transparent 60%),
+    linear-gradient(180deg, #eef2ff 0%, #f7f8fb 70%);
+}
+
+@keyframes dash-flow {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+.animate-dash {
+  animation: dash-flow 1.6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
