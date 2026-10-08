@@ -84,6 +84,19 @@ export function datePairs(params: FlightSearchParams, today: IsoDate): DatePair[
       if (diffDays(start, end) > MAX_RANGE_DAYS) end = addDays(start, MAX_RANGE_DAYS);
       const span = diffDays(start, end);
       const offsets = spread(0, span, Math.min(span + 1, 10));
+      if (!params.oneWay && params.returnFrom && params.returnUntil) {
+        // Departure window × return window, limited by the length of stay.
+        const minN = params.minNights ?? 1;
+        const maxN = params.maxNights ?? 30;
+        for (const offset of offsets) {
+          const dep = addDays(start, offset);
+          const lo = Math.max(minN, diffDays(dep, params.returnFrom));
+          const hi = Math.min(maxN, diffDays(dep, params.returnUntil));
+          if (hi < Math.max(1, lo)) continue;
+          for (const n of spread(Math.max(1, lo), hi, 3)) pairs.push(pair(dep, n));
+        }
+        break;
+      }
       const nights = params.oneWay ? [null] : nightsFor(params, 3);
       for (const offset of offsets) for (const n of nights) pairs.push(pair(addDays(start, offset), n));
       break;

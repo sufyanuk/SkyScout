@@ -166,6 +166,9 @@ export interface FlightSearchParams {
   departure: IsoDate | null;
   /** Last possible departure date when when === "range". */
   departureEnd: IsoDate | null;
+  /** Return window (range searches): earliest and latest return dates. */
+  returnFrom: IsoDate | null;
+  returnUntil: IsoDate | null;
   returnDate: IsoDate | null;
   oneWay: boolean;
   adults: number;

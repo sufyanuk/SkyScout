@@ -19,7 +19,7 @@ import { locationLabel } from "@/lib/catalog/locations";
 import { totalPrice } from "@/lib/flights/filtering";
 import { isSingleRoute } from "@/lib/flights/params";
 import { forecastFare, type FareForecast } from "@/lib/insights/forecast";
-import { todayIso } from "@/lib/dates";
+import { addDays, todayIso } from "@/lib/dates";
 import { getFlightProvider } from "@/lib/flights";
 import type { FlightSearchParams } from "@/lib/flights/types";
 import { CABIN_LABELS, formatDateRange } from "@/lib/format";
@@ -48,13 +48,32 @@ function whenLabel(params: FlightSearchParams) {
         params.oneWay || (!params.minNights && !params.maxNights)
           ? ""
           : `, ${params.minNights ?? 1}–${params.maxNights ?? params.minNights ?? 30} nights`;
-      return params.departure
-        ? `Departing ${formatDateRange(params.departure, params.departureEnd ?? params.departure)}${stay}`
-        : "Flexible dates";
+      if (!params.departure) return "Flexible dates";
+      const leave = `Leave ${formatDateRange(params.departure, params.departureEnd ?? params.departure)}`;
+      const back =
+        !params.oneWay && params.returnFrom && params.returnUntil
+          ? ` · return ${formatDateRange(params.returnFrom, params.returnUntil)}`
+          : "";
+      return `${leave}${back}${stay}`;
     }
     default:
       return "Any dates in the next 3 months";
   }
+}
+
+/** Date windows for the search box; single dates become one-day ranges. */
+function searchWindows(params: FlightSearchParams) {
+  const flex = params.when === "flexible" ? 3 : 0;
+  if (params.when === "range" || ((params.when === "exact" || params.when === "flexible") && params.departure)) {
+    const dep = params.departure!;
+    return {
+      departure: params.when === "range" ? dep : addDays(dep, -flex),
+      until: params.when === "range" ? (params.departureEnd ?? dep) : addDays(dep, flex),
+      returnFrom: params.returnFrom ?? (params.returnDate ? addDays(params.returnDate, -flex) : undefined),
+      returnUntil: params.returnUntil ?? (params.returnDate ? addDays(params.returnDate, flex) : undefined),
+    };
+  }
+  return {};
 }
 
 function toQuery(sp: SearchParams): string {
@@ -130,10 +149,7 @@ export default async function FlightsPage({ searchParams }: PageProps<"/flights"
       initial={{
         from: params.from,
         to: params.to ?? "anywhere",
-        departure: params.departure ?? "",
-        returnDate: params.returnDate ?? "",
-        until: params.departureEnd ?? "",
-        when: params.when,
+        ...searchWindows(params),
         oneWay: params.oneWay,
         adults: params.adults,
         children: params.children,
@@ -142,10 +158,7 @@ export default async function FlightsPage({ searchParams }: PageProps<"/flights"
         sort,
         stops: filters.stops.length === 1 && filters.stops[0] === 0 ? "0" : filters.stops.length === 2 && !filters.stops.includes(2) ? "1" : "any",
         limit,
-        cabinBags: filters.bags.cabin,
-        checkedBags: filters.bags.checked,
         maxPriceUsd: filters.maxPrice,
-        maxDuration: filters.maxDurationMinutes ? filters.maxDurationMinutes / 60 : null,
         maxLayover: filters.maxLayoverMinutes ? filters.maxLayoverMinutes / 60 : null,
         minNights: params.minNights,
         maxNights: params.maxNights,

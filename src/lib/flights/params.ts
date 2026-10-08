@@ -12,6 +12,8 @@ export function makeSearchParams(input: ParamsInput): FlightSearchParams {
     when: "anytime",
     departure: null,
     departureEnd: null,
+    returnFrom: null,
+    returnUntil: null,
     returnDate: null,
     oneWay: false,
     adults: 1,

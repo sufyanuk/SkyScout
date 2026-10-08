@@ -8,6 +8,7 @@ import {
   ChevronDown,
   Coins,
   Loader2,
+  MoonStar,
   PlaneLanding,
   PlaneTakeoff,
   Search,
@@ -23,39 +24,37 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AIRLINES } from "@/lib/catalog/airlines";
 import { CURRENCIES } from "@/lib/currency";
 import { addDays } from "@/lib/dates";
-import { CABINS, type Cabin, type SortOption, type TimeBucket, type TransferOption, type WhenOption } from "@/lib/flights/types";
+import { CABINS, type Cabin, type SortOption, type TimeBucket, type TransferOption } from "@/lib/flights/types";
 import { CABIN_LABELS } from "@/lib/format";
 import { buildSearchHref } from "@/lib/search-params";
 import { cn } from "@/lib/utils";
 import { AirportSelector, ANYWHERE } from "./airport-selector";
-import { DateSelector } from "./date-selector";
+import { DateRangePicker, type DateRange } from "./date-range-picker";
 import { TravelerSelector } from "./traveler-selector";
 
 export interface SearchBoxValues {
   from: string;
   to: string;
+  /** Departure window (YYYY-MM-DD). */
   departure: string;
-  returnDate: string;
-  /** End of the departure window in "range" mode. */
   until: string;
-  when: WhenOption;
+  /** Return window (YYYY-MM-DD); ignored for one-way trips. */
+  returnFrom: string;
+  returnUntil: string;
   oneWay: boolean;
   adults: number;
   children: number;
   infants: number;
   cabin: Cabin;
+  minNights: number | null;
+  maxNights: number | null;
   // Additional options
   sort: SortOption;
   stops: "any" | "0" | "1";
   limit: number;
-  cabinBags: number;
-  checkedBags: number;
   /** Max budget per person in USD (shown in the visitor's currency). */
   maxPriceUsd: number | null;
-  maxDuration: number | null;
   maxLayover: number | null;
-  minNights: number | null;
-  maxNights: number | null;
   dep: TimeBucket | "any";
   transfer: TransferOption;
   airlines: string[];
@@ -72,14 +71,6 @@ interface SearchBoxProps {
   className?: string;
 }
 
-const DATE_MODES: { when: WhenOption; label: string }[] = [
-  { when: "exact", label: "Exact dates" },
-  { when: "range", label: "Date range" },
-  { when: "anytime", label: "Any dates" },
-  { when: "weekend", label: "Weekend" },
-  { when: "next-month", label: "Next month" },
-];
-
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: "cheapest", label: "Lowest price" },
   { value: "best", label: "Best overall" },
@@ -87,31 +78,48 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: "value", label: "Biggest saving" },
 ];
 
-const DEFAULTS: Omit<SearchBoxValues, "from"> = {
+const DEFAULTS: Omit<SearchBoxValues, "from" | "departure" | "until" | "returnFrom" | "returnUntil"> = {
   to: ANYWHERE,
-  departure: "",
-  returnDate: "",
-  until: "",
-  when: "anytime",
   oneWay: false,
   adults: 1,
   children: 0,
   infants: 0,
   cabin: "economy",
+  minNights: null,
+  maxNights: null,
   sort: "best",
   stops: "any",
   limit: 24,
-  cabinBags: 0,
-  checkedBags: 0,
   maxPriceUsd: null,
-  maxDuration: null,
   maxLayover: null,
-  minNights: null,
-  maxNights: null,
   dep: "any",
   transfer: "include",
   airlines: [],
 };
+
+/** A return window that fits a departure window: a couple of days after it starts to two weeks after it ends. */
+function defaultReturn(departure: DateRange): DateRange {
+  return { start: addDays(departure.start, 2), end: addDays(departure.end, 14) };
+}
+
+function initialValues(initial: SearchBoxProps["initial"], today: string): SearchBoxValues {
+  const departure =
+    initial.departure && initial.departure > today
+      ? { start: initial.departure, end: initial.until && initial.until >= initial.departure ? initial.until : initial.departure }
+      : { start: addDays(today, 1), end: addDays(today, 30) };
+  const ret =
+    initial.returnFrom && initial.returnUntil && initial.returnUntil >= initial.returnFrom && initial.returnUntil > departure.start
+      ? { start: initial.returnFrom, end: initial.returnUntil }
+      : defaultReturn(departure);
+  return {
+    ...DEFAULTS,
+    ...initial,
+    departure: departure.start,
+    until: departure.end,
+    returnFrom: ret.start,
+    returnUntil: ret.end,
+  };
+}
 
 /** How many "Additional options" differ from their defaults. */
 function advancedCount(v: SearchBoxValues) {
@@ -119,12 +127,8 @@ function advancedCount(v: SearchBoxValues) {
     v.sort !== DEFAULTS.sort,
     v.stops !== "any",
     v.limit !== DEFAULTS.limit,
-    v.cabinBags > 0,
-    v.checkedBags > 0,
     v.maxPriceUsd !== null,
-    v.maxDuration !== null,
     v.maxLayover !== null,
-    v.minNights !== null || v.maxNights !== null,
     v.dep !== "any",
     v.transfer !== "include",
     v.airlines.length > 0,
@@ -141,28 +145,20 @@ export function SearchBox({ initial, today, variant = "hero", keep, onSubmitted,
   const money = useCurrency();
   const [pending, startTransition] = useTransition();
   const [currencyPending, startCurrency] = useTransition();
-  const defaultDeparture = addDays(today, 21);
-  const [v, setV] = useState<SearchBoxValues>({ ...DEFAULTS, ...initial });
-  const [showMore, setShowMore] = useState(() => advancedCount({ ...DEFAULTS, ...initial }) > 0 && variant === "compact");
+  const [v, setV] = useState<SearchBoxValues>(() => initialValues(initial, today));
+  const [showMore, setShowMore] = useState(() => advancedCount(initialValues(initial, today)) > 0 && variant === "compact");
   const [budgetText, setBudgetText] = useState(() =>
     initial.maxPriceUsd ? String(Math.round(money.convert(initial.maxPriceUsd))) : "",
   );
   const update = (patch: Partial<SearchBoxValues>) => setV((prev) => ({ ...prev, ...patch }));
-  const exactish = v.when === "exact" || v.when === "flexible";
-  const range = v.when === "range";
   const minDate = addDays(today, 1);
   const moreCount = advancedCount(v);
 
-  function chooseMode(when: WhenOption) {
-    if (when === "exact") {
-      const departure = v.departure || defaultDeparture;
-      update({ when, departure, returnDate: v.oneWay ? "" : v.returnDate || addDays(departure, 7) });
-    } else if (when === "range") {
-      const departure = v.departure || addDays(today, 7);
-      update({ when, departure, until: v.until && v.until > departure ? v.until : addDays(departure, 30) });
-    } else {
-      update({ when });
-    }
+  function changeDeparture(range: DateRange) {
+    // Keep the return window valid: it must end after the first possible departure.
+    const keepReturn = v.returnUntil > range.start;
+    const ret = keepReturn ? { start: v.returnFrom, end: v.returnUntil } : defaultReturn(range);
+    update({ departure: range.start, until: range.end, returnFrom: ret.start, returnUntil: ret.end });
   }
 
   function changeCurrency(code: string) {
@@ -174,16 +170,8 @@ export function SearchBox({ initial, today, variant = "hero", keep, onSubmitted,
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    if ((exactish || range) && !v.departure) {
-      toast.error("Choose a departure date", { description: "Or pick “Any dates” to see the cheapest options." });
-      return;
-    }
-    if (exactish && !v.oneWay && v.returnDate && v.returnDate <= v.departure) {
-      toast.error("Return must be after departure");
-      return;
-    }
-    if (range && (!v.until || v.until < v.departure)) {
-      toast.error("The date range must end after it starts");
+    if (!v.oneWay && v.returnUntil <= v.departure) {
+      toast.error("Return dates must be after departure", { description: "Pick a return range that ends after you leave." });
       return;
     }
     if (v.minNights && v.maxNights && v.minNights > v.maxNights) {
@@ -195,13 +183,11 @@ export function SearchBox({ initial, today, variant = "hero", keep, onSubmitted,
       return;
     }
     const budget = numOrNull(budgetText);
-    const stay = !v.oneWay && (range || !exactish);
     const href = buildSearchHref({
       from: v.from,
       to: v.to,
-      departure: exactish || range ? v.departure : null,
-      returnDate: exactish && !v.oneWay ? v.returnDate || addDays(v.departure, 7) : null,
-      when: v.when,
+      departure: v.departure,
+      when: "range",
       oneWay: v.oneWay,
       adults: v.adults,
       children: v.children,
@@ -209,17 +195,16 @@ export function SearchBox({ initial, today, variant = "hero", keep, onSubmitted,
       cabin: v.cabin,
       extra: {
         ...keep,
-        until: range ? v.until : null,
+        until: v.until,
+        returnFrom: v.oneWay ? null : v.returnFrom,
+        returnUntil: v.oneWay ? null : v.returnUntil,
+        minNights: v.oneWay ? null : v.minNights,
+        maxNights: v.oneWay ? null : v.maxNights,
         sort: v.sort !== "best" ? v.sort : null,
         stops: v.stops === "any" ? null : v.stops === "0" ? "0" : "0,1",
         limit: v.limit !== DEFAULTS.limit ? v.limit : null,
-        cabinBags: v.cabinBags || null,
-        checkedBags: v.checkedBags || null,
         maxPrice: budget ? Math.round(money.toUsd(budget)) : null,
-        maxDuration: v.maxDuration,
         maxLayover: v.maxLayover,
-        minNights: stay ? v.minNights : null,
-        maxNights: stay ? v.maxNights : null,
         dep: v.dep !== "any" ? v.dep : null,
         transfer: v.transfer !== "include" ? v.transfer : null,
         airlines: v.airlines.length ? v.airlines.join(",") : null,
@@ -244,8 +229,8 @@ export function SearchBox({ initial, today, variant = "hero", keep, onSubmitted,
         className,
       )}
     >
-      {/* Trip type + date modes */}
-      <div className="no-scrollbar -mx-1 mb-3 flex items-center gap-2 overflow-x-auto px-1 pb-0.5">
+      {/* Trip type */}
+      <div className="mb-3 flex items-center gap-2">
         <div role="radiogroup" aria-label="Trip type" className="flex shrink-0 rounded-full bg-muted p-1">
           {[
             { label: "Return", oneWay: false },
@@ -256,7 +241,7 @@ export function SearchBox({ initial, today, variant = "hero", keep, onSubmitted,
               type="button"
               role="radio"
               aria-checked={v.oneWay === opt.oneWay}
-              onClick={() => update({ oneWay: opt.oneWay, returnDate: opt.oneWay ? "" : v.returnDate })}
+              onClick={() => update({ oneWay: opt.oneWay })}
               className={cn(
                 "rounded-full px-3.5 py-1.5 text-[13px] font-semibold text-muted-foreground transition",
                 v.oneWay === opt.oneWay && "bg-card text-foreground shadow-sm",
@@ -266,22 +251,6 @@ export function SearchBox({ initial, today, variant = "hero", keep, onSubmitted,
             </button>
           ))}
         </div>
-        <span className="mx-1 h-5 w-px shrink-0 bg-border" aria-hidden="true" />
-        <div role="radiogroup" aria-label="Dates" className="flex gap-2">
-          {DATE_MODES.map((mode) => {
-            const active = v.when === mode.when || (mode.when === "exact" && v.when === "flexible");
-            return (
-              <Chip key={mode.when} role="radio" active={active} onClick={() => chooseMode(mode.when)}>
-                {mode.label}
-              </Chip>
-            );
-          })}
-        </div>
-        {exactish && (
-          <Chip active={v.when === "flexible"} onClick={() => update({ when: v.when === "flexible" ? "exact" : "flexible" })}>
-            ± 3 days
-          </Chip>
-        )}
       </div>
 
       <div className="grid gap-2 lg:grid-cols-[1fr_1fr_0.8fr_0.8fr]">
@@ -313,62 +282,42 @@ export function SearchBox({ initial, today, variant = "hero", keep, onSubmitted,
             <ArrowLeftRight className="size-4" aria-hidden="true" />
           </button>
         </div>
-        <div className="grid grid-cols-2 gap-2 lg:col-span-2">
-          {range ? (
-            <>
-              <DateSelector
-                label="Depart from"
-                value={v.departure}
-                min={minDate}
-                when="exact"
-                onExactRequested={() => {}}
-                onChange={(departure) =>
-                  update({ departure, until: v.until && v.until > departure ? v.until : addDays(departure, 30) })
-                }
-              />
-              <DateSelector
-                label="Depart until"
-                value={v.until}
-                min={v.departure || minDate}
-                when="exact"
-                onExactRequested={() => {}}
-                onChange={(until) => update({ until })}
-              />
-            </>
-          ) : (
-            <>
-              <DateSelector
-                label="Departure"
-                value={v.departure}
-                min={minDate}
-                when={v.when}
-                onExactRequested={() => chooseMode("exact")}
-                onChange={(departure) => {
-                  const patch: Partial<SearchBoxValues> = { departure, when: v.when === "flexible" ? "flexible" : "exact" };
-                  if (!v.oneWay && (!v.returnDate || v.returnDate <= departure)) patch.returnDate = addDays(departure, 7);
-                  update(patch);
-                }}
-              />
-              <DateSelector
-                label="Return"
-                value={v.returnDate}
-                min={v.departure ? addDays(v.departure, 1) : minDate}
-                when={v.when}
-                onExactRequested={() => chooseMode("exact")}
-                onChange={(returnDate) => update({ returnDate })}
-                disabled={v.oneWay}
-                disabledLabel="One-way"
-              />
-            </>
-          )}
+        <div className="grid gap-2 sm:grid-cols-2 lg:col-span-2">
+          <DateRangePicker
+            label="Departure date range"
+            title="Departure Date Range"
+            subtitle="select range of dates to leave"
+            value={{ start: v.departure, end: v.until }}
+            onChange={changeDeparture}
+            min={minDate}
+            today={today}
+          />
+          <DateRangePicker
+            label="Return date range"
+            title="Return Date Range"
+            subtitle="select range of dates to come back"
+            value={{ start: v.returnFrom, end: v.returnUntil }}
+            onChange={(r) => update({ returnFrom: r.start, returnUntil: r.end })}
+            min={addDays(v.departure, 1)}
+            today={today}
+            disabled={v.oneWay}
+            disabledLabel="One-way"
+          />
         </div>
 
-        <div className="grid grid-cols-2 gap-2 lg:col-span-4 lg:grid-cols-[1.2fr_1fr_1fr_auto]">
+        <div className="grid grid-cols-2 gap-2 lg:col-span-4 lg:grid-cols-[1.2fr_1.1fr_1fr_1fr_auto]">
           <TravelerSelector
             adults={v.adults}
             childCount={v.children}
             infants={v.infants}
             onChange={(t) => update(t)}
+            className="col-span-2 lg:col-span-1"
+          />
+          <StayField
+            min={v.minNights}
+            max={v.maxNights}
+            onChange={(patch) => update(patch)}
+            disabled={v.oneWay}
             className="col-span-2 lg:col-span-1"
           />
           <Select value={v.cabin} onValueChange={(cabin) => update({ cabin: cabin as Cabin })}>
@@ -419,7 +368,7 @@ export function SearchBox({ initial, today, variant = "hero", keep, onSubmitted,
               ))}
             </SelectContent>
           </Select>
-          <Button type="submit" size="xl" disabled={pending} className="col-span-2 h-[60px] rounded-2xl px-8 text-base lg:col-span-1 lg:min-w-48">
+          <Button type="submit" size="xl" disabled={pending} className="col-span-2 h-[60px] rounded-2xl px-8 text-base lg:col-span-1 lg:min-w-44">
             {pending ? <Loader2 className="size-5 animate-spin" aria-hidden="true" /> : <Search className="size-5" aria-hidden="true" />}
             {compact ? "Search" : "Find Flights"}
           </Button>
@@ -478,27 +427,13 @@ export function SearchBox({ initial, today, variant = "hero", keep, onSubmitted,
                 { value: "only", label: "Self-transfer only" },
               ]}
             />
-            <OptionSelect
-              label="Cabin bags"
-              hint="Per traveller. Fares without an included cabin bag show the estimated fee in the price."
-              value={String(v.cabinBags)}
-              onChange={(n) => update({ cabinBags: Number(n) })}
-              options={[0, 1].map((n) => ({ value: String(n), label: n ? "1 cabin bag" : "No cabin bag needed" }))}
-            />
-            <OptionSelect
-              label="Checked bags"
-              hint="Per traveller. Bag fees are added to fares that don't include them, so prices are comparable."
-              value={String(v.checkedBags)}
-              onChange={(n) => update({ checkedBags: Number(n) })}
-              options={[0, 1, 2].map((n) => ({ value: String(n), label: n ? `${n} checked bag${n > 1 ? "s" : ""}` : "None" }))}
-            />
             <NumberField
               label="Max budget"
               prefix={money.currency}
               value={budgetText}
               onChange={setBudgetText}
               placeholder="Any"
-              hint="Per person, including any bags you selected."
+              hint="Per person."
             />
             <OptionSelect
               label="Departure time"
@@ -513,14 +448,6 @@ export function SearchBox({ initial, today, variant = "hero", keep, onSubmitted,
               ]}
             />
             <NumberField
-              label="Max duration"
-              suffix="Hours"
-              value={v.maxDuration ? String(v.maxDuration) : ""}
-              onChange={(t) => update({ maxDuration: numOrNull(t) })}
-              placeholder="Any"
-              max={72}
-            />
-            <NumberField
               label="Max layover"
               suffix="Hours"
               value={v.maxLayover ? String(v.maxLayover) : ""}
@@ -528,29 +455,6 @@ export function SearchBox({ initial, today, variant = "hero", keep, onSubmitted,
               placeholder="Any"
               max={48}
             />
-            <div className="col-span-2 space-y-1.5 lg:col-span-1">
-              <p className="text-[13px] font-medium text-muted-foreground">
-                Length of stay (nights){" "}
-                {v.oneWay || exactish ? <span className="font-normal">· flexible dates</span> : null}
-              </p>
-              <div className="flex items-center gap-2">
-                <NumberInput
-                  ariaLabel="Minimum nights"
-                  value={v.minNights ? String(v.minNights) : ""}
-                  onChange={(t) => update({ minNights: numOrNull(t) })}
-                  placeholder="Min"
-                  disabled={v.oneWay || exactish}
-                />
-                <span className="text-muted-foreground">–</span>
-                <NumberInput
-                  ariaLabel="Maximum nights"
-                  value={v.maxNights ? String(v.maxNights) : ""}
-                  onChange={(t) => update({ maxNights: numOrNull(t) })}
-                  placeholder="Max"
-                  disabled={v.oneWay || exactish}
-                />
-              </div>
-            </div>
             <AirlinePicker value={v.airlines} onChange={(airlines) => update({ airlines })} />
           </div>
         )}
@@ -559,33 +463,65 @@ export function SearchBox({ initial, today, variant = "hero", keep, onSubmitted,
   );
 }
 
-function Chip({
-  active,
-  onClick,
-  children,
-  role,
+/** Min–max nights, styled like the other main search fields. */
+function StayField({
+  min,
+  max,
+  onChange,
+  disabled,
+  className,
 }: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-  role?: "radio";
+  min: number | null;
+  max: number | null;
+  onChange: (patch: { minNights?: number | null; maxNights?: number | null }) => void;
+  disabled?: boolean;
+  className?: string;
 }) {
+  const input =
+    "w-14 min-w-0 rounded-lg border border-input bg-card px-1.5 py-1 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none text-center text-[15px] font-semibold tabular-nums outline-none placeholder:font-normal placeholder:text-muted-foreground/70 focus:border-ring focus:ring-[3px] focus:ring-ring/15 disabled:bg-transparent";
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      role={role}
-      aria-checked={role ? active : undefined}
-      aria-pressed={role ? undefined : active}
+    <div
       className={cn(
-        "shrink-0 rounded-full border px-3.5 py-1.5 text-[13px] font-semibold transition",
-        active
-          ? "border-sunrise/30 bg-sunrise-soft text-sunrise"
-          : "border-border bg-card text-muted-foreground hover:border-foreground/25 hover:text-foreground",
+        "flex min-h-[60px] items-center gap-3 rounded-2xl border border-input bg-card px-4",
+        disabled && "bg-muted/60",
+        className,
       )}
     >
-      {children}
-    </button>
+      <MoonStar className="size-[18px] shrink-0 text-muted-foreground" aria-hidden="true" />
+      <div className="flex min-w-0 flex-col py-1.5">
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Length of stay</span>
+        {disabled ? (
+          <span className="text-[15px] text-muted-foreground">One-way</span>
+        ) : (
+          <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <input
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={30}
+              aria-label="Minimum nights"
+              placeholder="Min"
+              value={min ?? ""}
+              onChange={(e) => onChange({ minNights: numOrNull(e.target.value) })}
+              className={input}
+            />
+            –
+            <input
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={30}
+              aria-label="Maximum nights"
+              placeholder="Max"
+              value={max ?? ""}
+              onChange={(e) => onChange({ maxNights: numOrNull(e.target.value) })}
+              className={input}
+            />
+            nights
+          </span>
+        )}
+      </div>
+    </div>
   );
 }
 

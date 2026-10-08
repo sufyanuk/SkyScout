@@ -52,6 +52,9 @@ export const flightsQuerySchema = z.object({
   departure: isoDate.optional(),
   /** End of the departure window when when=range. */
   until: isoDate.optional(),
+  /** Return window for range searches. */
+  returnFrom: isoDate.optional(),
+  returnUntil: isoDate.optional(),
   return: isoDate.optional(),
   when: z.enum(WHEN_OPTIONS).optional(),
   trip: z.enum(["oneway", "return"]).optional(),
@@ -127,6 +130,8 @@ export function toParsedSearch(q: Partial<FlightsQuery>, fallbackOrigin = DEFAUL
       when,
       departure,
       departureEnd: when === "range" ? (q.until ?? null) : null,
+      returnFrom: when === "range" && !oneWay ? (q.returnFrom ?? null) : null,
+      returnUntil: when === "range" && !oneWay ? (q.returnUntil ?? null) : null,
       returnDate: when === "range" ? null : returnDate,
       oneWay,
       adults,

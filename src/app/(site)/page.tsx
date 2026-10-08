@@ -1,23 +1,19 @@
 import Link from "next/link";
 import { Price } from "@/components/common/price";
-import { ArrowRight, BellRing, CalendarHeart, Compass, Globe2, Luggage, Plane, Sparkles, TicketPercent, TrendingDown, Wallet } from "lucide-react";
+import { ArrowRight, BellRing, Compass, Luggage, Sparkles, TrendingDown, Wallet } from "lucide-react";
 import { JsonLd } from "@/components/common/json-ld";
 import { SectionHeader } from "@/components/common/section-header";
-import { DestinationCard } from "@/components/destinations/destination-card";
 import { OriginPicker } from "@/components/explore/origin-picker";
-import { DealCard } from "@/components/flights/deal-card";
 import { ForecastChip } from "@/components/flights/forecast";
 import { SearchBox } from "@/components/search/search-box";
 import { Button } from "@/components/ui/button";
 import { getAirport } from "@/lib/catalog/airports";
-import { DESTINATIONS } from "@/lib/catalog/destinations";
 import { todayIso } from "@/lib/dates";
 import { getFlightProvider } from "@/lib/flights";
 import { forecastFare } from "@/lib/insights/forecast";
 import { tripCost } from "@/lib/insights/trip-cost";
 import { buildSearchHref } from "@/lib/search-params";
-import { formatMoney } from "@/lib/currency";
-import { getCurrency, getHomeAirport } from "@/lib/services/preferences";
+import { getHomeAirport } from "@/lib/services/preferences";
 import { absoluteUrl, SITE } from "@/lib/site";
 
 export default async function HomePage() {
@@ -25,14 +21,11 @@ export default async function HomePage() {
   const airport = getAirport(origin)!;
   const provider = getFlightProvider();
   const today = todayIso();
-  const currency = await getCurrency();
 
   const TRIP_BUDGET = 800;
   const TRIP_NIGHTS = 5;
-  const [best, weekend, longHaul, quotes, fiveNightQuotes] = await Promise.all([
-    provider.getDeals({ origin, collection: "best", limit: 6 }),
-    provider.getDeals({ origin, collection: "weekend", limit: 4 }),
-    provider.getDeals({ origin, collection: "long-haul", limit: 3 }),
+  const [best, quotes, fiveNightQuotes] = await Promise.all([
+    provider.getDeals({ origin, collection: "best", limit: 1 }),
     provider.exploreDestinations(origin),
     provider.exploreDestinations(origin, { nights: TRIP_NIGHTS }),
   ]);
@@ -47,17 +40,6 @@ export default async function HomePage() {
     .filter((t): t is { q: typeof t.q; cost: NonNullable<typeof t.cost> } => !!t.cost && t.cost.total <= TRIP_BUDGET)
     .sort((a, b) => a.cost.total - b.cost.total);
   const cheapest = quotes.slice(0, 8);
-  const priceByAirport = new Map(quotes.map((q) => [q.destination.code, q.cheapest.price]));
-  const trending = DESTINATIONS.filter((d) => d.trending && d.airport !== origin).slice(0, 6);
-
-  const quickSearches = [
-    { label: "Anywhere", icon: Globe2, href: buildSearchHref({ from: origin, to: null, extra: { sort: "cheapest" } }) },
-    { label: "This weekend", icon: CalendarHeart, href: buildSearchHref({ from: origin, when: "weekend", extra: { sort: "cheapest" } }) },
-    { label: "Next month", icon: Sparkles, href: buildSearchHref({ from: origin, when: "next-month", extra: { sort: "cheapest" } }) },
-    { label: `Under ${formatMoney(300, currency)}`, icon: TicketPercent, href: buildSearchHref({ from: origin, extra: { maxPrice: 300, sort: "cheapest" } }) },
-    { label: "Direct flights only", icon: Plane, href: buildSearchHref({ from: origin, extra: { stops: "0", sort: "cheapest" } }) },
-    { label: `Trip under ${formatMoney(800, currency)}`, icon: Wallet, href: `/explore?from=${origin}&budget=800&nights=5&style=budget` },
-  ];
 
   return (
     <>
@@ -96,38 +78,10 @@ export default async function HomePage() {
 
           <SearchBox className="mt-9" today={today} initial={{ from: origin }} />
 
-          <nav aria-label="Quick searches" className="no-scrollbar -mx-4 mt-5 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
-            {quickSearches.map(({ label, icon: Icon, href }) => (
-              <Link
-                key={label}
-                href={href}
-                className="inline-flex shrink-0 items-center gap-2 rounded-full border bg-card/80 px-4 py-2 text-sm font-medium shadow-sm backdrop-blur transition hover:border-primary/40 hover:text-primary"
-              >
-                <Icon className="size-4 text-primary" aria-hidden="true" />
-                {label}
-              </Link>
-            ))}
-          </nav>
         </div>
       </section>
 
       <div className="container-page space-y-20 pt-14 sm:space-y-24">
-        {/* Best deals */}
-        <section aria-labelledby="best-deals">
-          <SectionHeader
-            id="best-deals"
-            eyebrow="Hand-picked by price, not by ads"
-            title="Best deals right now"
-            description={`The biggest drops below typical fares from ${airport.city}, refreshed daily.`}
-            href="/deals"
-          />
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {best.map((deal, i) => (
-              <DealCard key={deal.id} deal={deal} priority={i < 3} />
-            ))}
-          </div>
-        </section>
-
         {/* Cheap from your airport */}
         <section aria-labelledby="from-airport" className="rounded-[2rem] border bg-card p-6 shadow-card sm:p-10">
           <div className="mb-8 flex flex-wrap items-end justify-between gap-6">
@@ -177,52 +131,6 @@ export default async function HomePage() {
             </Button>
           </div>
         </section>
-
-        {/* Trending destinations */}
-        <section aria-labelledby="trending">
-          <SectionHeader id="trending" eyebrow="What travellers are scouting" title="Trending destinations" href="/destinations" linkLabel="All destinations" />
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {trending.map((d) => (
-              <DestinationCard key={d.slug} destination={d} fromPrice={priceByAirport.get(d.airport)} originCity={airport.city} />
-            ))}
-          </div>
-        </section>
-
-        {/* Weekend escapes */}
-        {weekend.length > 0 && (
-          <section aria-labelledby="weekend">
-            <SectionHeader
-              id="weekend"
-              eyebrow="Leave Thursday or Friday, back by Monday"
-              title="Weekend escapes"
-              description="Short flights, long weekends."
-              href="/deals?collection=weekend"
-            />
-            <div className="no-scrollbar -mx-4 flex snap-x gap-5 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4">
-              {weekend.map((deal) => (
-                <DealCard key={deal.id} deal={deal} className="w-[82%] shrink-0 snap-start sm:w-auto" />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Long-haul */}
-        {longHaul.length > 0 && (
-          <section aria-labelledby="long-haul">
-            <SectionHeader
-              id="long-haul"
-              eyebrow="Big trips, small fares"
-              title="Long-haul bargains"
-              description="Over 5,000 km for well under the usual price."
-              href="/deals?collection=long-haul"
-            />
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {longHaul.map((deal) => (
-                <DealCard key={deal.id} deal={deal} />
-              ))}
-            </div>
-          </section>
-        )}
 
         {/* Differentiators */}
         <section aria-labelledby="only-here">
