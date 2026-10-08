@@ -89,7 +89,7 @@ export default async function HomePage() {
               {/* eslint-disable-next-line @next/next/no-img-element -- served straight from Wikimedia's CDN */}
               <img
                 src={airplane.src}
-                alt="A passenger airliner in flight"
+                alt="An Airbus A350 passenger jet"
                 width={airplane.width}
                 height={airplane.height}
                 fetchPriority="high"
