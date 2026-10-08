@@ -21,8 +21,6 @@ export interface Photo {
   sourceUrl: string;
 }
 
-export const AIRPLANE_ARTICLE = "Airbus A350";
-
 const API = "https://en.wikipedia.org/w/api.php";
 const WEEK = 60 * 60 * 24 * 7;
 const HEADERS = { "User-Agent": "SkyScout/1.0 (https://skyscout-six.vercel.app)" };
@@ -128,8 +126,4 @@ export async function getDestinationPhotos(codes: string[], width = 480): Promis
     if (photo) out[c] = photo;
   }
   return out;
-}
-
-export async function getAirplanePhoto(width = 1200): Promise<Photo | null> {
-  return (await photosForArticles([AIRPLANE_ARTICLE], width)).get(AIRPLANE_ARTICLE) ?? null;
 }

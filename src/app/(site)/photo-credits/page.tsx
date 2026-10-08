@@ -1,27 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { DESTINATIONS } from "@/lib/catalog/destinations";
-import { getAirplanePhoto, getDestinationPhotos } from "@/lib/photos";
+import { getDestinationPhotos } from "@/lib/photos";
 
 export const metadata: Metadata = {
   title: "Photo credits",
-  description: "Credits and licences for the destination and aircraft photos used on SkyScout.",
+  description: "Credits and licences for the destination photos used on SkyScout.",
   alternates: { canonical: "/photo-credits" },
 };
 
 export default async function PhotoCreditsPage() {
-  const [photos, airplane] = await Promise.all([
-    getDestinationPhotos(DESTINATIONS.map((d) => d.airport)),
-    getAirplanePhoto(),
-  ]);
-  const rows = [
-    ...(airplane ? [{ key: "plane", label: "Homepage aircraft", photo: airplane }] : []),
-    ...DESTINATIONS.filter((d) => photos[d.airport]).map((d) => ({
-      key: d.slug,
-      label: `${d.city}, ${d.country}`,
-      photo: photos[d.airport],
-    })),
-  ];
+  const photos = await getDestinationPhotos(DESTINATIONS.map((d) => d.airport));
+  const rows = DESTINATIONS.filter((d) => photos[d.airport]).map((d) => ({
+    key: d.slug,
+    label: `${d.city}, ${d.country}`,
+    photo: photos[d.airport],
+  }));
 
   return (
     <div className="container-page max-w-3xl py-10">

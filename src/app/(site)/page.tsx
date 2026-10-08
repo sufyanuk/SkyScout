@@ -2,7 +2,6 @@ import Link from "next/link";
 import { Price } from "@/components/common/price";
 import { ArrowRight, BellRing, Compass, Sparkles, TrendingDown, Wallet } from "lucide-react";
 import { JsonLd } from "@/components/common/json-ld";
-import { PhotoCredit } from "@/components/common/photo-credit";
 import { DestinationArt } from "@/components/destinations/destination-art";
 import { DESTINATIONS } from "@/lib/catalog/destinations";
 import { SectionHeader } from "@/components/common/section-header";
@@ -16,7 +15,7 @@ import { getFlightProvider } from "@/lib/flights";
 import { forecastFare } from "@/lib/insights/forecast";
 import { tripCost } from "@/lib/insights/trip-cost";
 import { buildSearchHref } from "@/lib/search-params";
-import { getAirplanePhoto, getDestinationPhotos, type Photo } from "@/lib/photos";
+import { getDestinationPhotos, type Photo } from "@/lib/photos";
 import { getHomeAirport } from "@/lib/services/preferences";
 import { absoluteUrl, SITE } from "@/lib/site";
 
@@ -44,10 +43,7 @@ export default async function HomePage() {
     .filter((t): t is { q: typeof t.q; cost: NonNullable<typeof t.cost> } => !!t.cost && t.cost.total <= TRIP_BUDGET)
     .sort((a, b) => a.cost.total - b.cost.total);
   const cheapest = quotes.slice(0, 8);
-  const [photos, airplane] = await Promise.all([
-    getDestinationPhotos(cheapest.map((q) => q.destination.code)),
-    getAirplanePhoto(),
-  ]);
+  const photos = await getDestinationPhotos(cheapest.map((q) => q.destination.code));
   const credited = cheapest.filter((q) => photos[q.destination.code]);
 
   return (
@@ -70,8 +66,7 @@ export default async function HomePage() {
       {/* Hero */}
       <section className="relative overflow-hidden bg-horizon">
         <div className="container-page relative pt-10 pb-12 sm:pt-16 sm:pb-14">
-          <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,460px)]">
-          <div className="min-w-0 max-w-3xl">
+          <div className="max-w-3xl">
             <p className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-card/70 px-3 py-1 text-xs font-semibold text-primary backdrop-blur">
               <span className="size-1.5 animate-pulse rounded-full bg-sunrise" aria-hidden="true" />
               {quotes.length} destinations priced from {airport.city} today
@@ -79,27 +74,11 @@ export default async function HomePage() {
             <h1 className="mt-5 text-[2.6rem] leading-[1.02] font-semibold tracking-[-0.035em] text-balance sm:text-6xl lg:text-7xl">
               Find flights <span className="font-display font-normal italic text-primary">worth</span> flying for.
             </h1>
-            <p className="mt-5 max-w-xl text-lg text-muted-foreground sm:text-xl">
-              SkyScout scans fares from your airport and surfaces the unusually cheap ones — plus destinations you
-              might never have thought to search.
+            <p className="mt-5 max-w-2xl text-lg text-muted-foreground sm:text-xl">
+              Uncover <strong className="font-semibold text-foreground">cheaper routes</strong> and the{" "}
+              <strong className="font-semibold text-foreground">best-value dates</strong> across your whole{" "}
+              <strong className="font-semibold text-foreground">travel window</strong>.
             </p>
-          </div>
-          {airplane && (
-            <figure className="relative overflow-hidden rounded-[2rem] shadow-lift">
-              {/* eslint-disable-next-line @next/next/no-img-element -- served straight from Wikimedia's CDN */}
-              <img
-                src={airplane.src}
-                alt="An Airbus A350 passenger jet"
-                width={airplane.width}
-                height={airplane.height}
-                fetchPriority="high"
-                className="h-48 w-full object-cover sm:h-64 lg:h-[340px]"
-              />
-              <figcaption className="absolute right-3 bottom-3">
-                <PhotoCredit photo={airplane} />
-              </figcaption>
-            </figure>
-          )}
           </div>
 
           <SearchBox className="mt-9" today={today} initial={{ from: origin }} />
