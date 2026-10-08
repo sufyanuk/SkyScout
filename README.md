@@ -21,7 +21,7 @@ Built with Next.js 16 (App Router), TypeScript, Tailwind CSS v4, shadcn/ui (Radi
 | Area | What's there |
 | --- | --- |
 | **Homepage** | Hero search with departure and return **date ranges** (presets: This Weekend, Next 7/30/60/90/180 days, or a custom range on a two-month calendar) and length of stay, cheap flights from your airport, the “Only on SkyScout” features, price alerts |
-| **Search** (`/flights`) | From and To can be an airport, a whole country ("United Arab Emirates") or a region ("Europe"). Dates can be exact, ± 3 days, a departure window with length of stay, any time, weekends or next month. Travellers include adults, children and lap infants, and there's cabin class and a display currency. **Additional options** cover sort, stops, results quantity, cabin and checked bags (priced in), max budget, max duration, max layover, departure time, self-transfer connections (include, exclude or only) and airlines. Everything lives in the URL, so searches are shareable. The sidebar or mobile drawer offers price, stops, dates, trip length, bags, connections, duration and layovers, airlines, departure and arrival time and cabin, plus list or grid view |
+| **Search** (`/flights`) | From and To can be an airport, a whole country ("United Arab Emirates") or a region ("Europe"). Departure and return are date ranges, with an optional length of stay. Travellers include adults, children and lap infants, and there's cabin class and a display currency. **Additional options** cover sort, stops, results quantity, max budget, max layover, departure time, self-transfer connections (include, exclude or only) and airlines. Everything lives in the URL, so searches are shareable. Results can be sorted and shown as a list or grid |
 | **Currencies** | 16 display currencies (USD, EUR, GBP, QAR, AED, SAR, INR…). Fares stay in USD internally and convert at indicative rates for display (`src/lib/currency.ts`) |
 | **Explore** (`/explore`) | Every destination from an origin, sorted by price, plus a zero-JS SVG "route radar" (compass bearing × flight time). Filters for when, budget and direct only |
 | **Deals** (`/deals`) | Collections: biggest drops, cheapest, weekend, under $300, direct, long-haul |
@@ -113,7 +113,7 @@ src/
     ui/                  shadcn/ui primitives (button, dialog, sheet, select, …)
     layout/              Header, NavLinks, UserMenu, MobileNavigation, Footer, Logo
     search/              SearchBox, AirportSelector, DateSelector, TravelerSelector
-    results/             FilterPanel, FilterSidebar, FilterDrawer, SortDropdown, ViewToggle
+    results/             SortDropdown, ViewToggle
     flights/             DealCard, FlightCard, FlightTimeline, PriceHistoryChart,
                          FavoriteButton, ShareButton, BookDialog, badges (Price/Savings/Rating)
     explore/  destinations/  alerts/  auth/  account/  common/ (EmptyState, LoadingSkeleton…)

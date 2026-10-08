@@ -6,8 +6,6 @@ import { BellPlus, ChevronDown, PlaneTakeoff, SearchX } from "lucide-react";
 import { EmptyState } from "@/components/common/empty-state";
 import { DealCard } from "@/components/flights/deal-card";
 import { FlightCard } from "@/components/flights/flight-card";
-import { FilterDrawer } from "@/components/results/filter-drawer";
-import { FilterSidebar } from "@/components/results/filter-sidebar";
 import { LoadMore } from "@/components/results/load-more";
 import { PendingResults, SearchNavigationProvider } from "@/components/results/search-navigation";
 import { SortDropdown } from "@/components/results/sort-dropdown";
@@ -210,9 +208,7 @@ export default async function FlightsPage({ searchParams }: PageProps<"/flights"
         </div>
       </div>
 
-      <div className="container-page grid gap-8 py-8 lg:grid-cols-[290px_1fr]">
-        <FilterSidebar facets={result.facets} hasExactDates={!!params.departure} />
-
+      <div className="container-page py-8">
         <section aria-labelledby="results-heading" className="min-w-0">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -223,7 +219,6 @@ export default async function FlightsPage({ searchParams }: PageProps<"/flights"
               {cheapest !== null && <p className="text-sm text-muted-foreground">Cheapest from <Price amount={cheapest} /> per person</p>}
             </div>
             <div className="flex items-center gap-2">
-              <FilterDrawer facets={result.facets} hasExactDates={!!params.departure} resultCount={deals.length} />
               <SortDropdown />
               <div className="hidden sm:block">
                 <ViewToggle />
@@ -235,12 +230,12 @@ export default async function FlightsPage({ searchParams }: PageProps<"/flights"
             {deals.length === 0 ? (
               <EmptyState
                 icon={SearchX}
-                title="No flights match these filters"
-                description="Try removing a filter, widening your price limit or using flexible dates — or let us show you anywhere that's cheap."
+                title="No flights match this search"
+                description="Try wider date ranges, a longer stay or a higher budget — or let us show you anywhere that's cheap."
                 action={
                   <>
                     <Button asChild>
-                      <Link href={`/flights?from=${params.from}&to=${params.to ?? "anywhere"}`}>Clear filters</Link>
+                      <Link href={`/flights?from=${params.from}&to=${params.to ?? "anywhere"}`}>Reset search</Link>
                     </Button>
                     <Button asChild variant="outline">
                       <Link href={`/explore?from=${params.origins[0]}`}>Explore anywhere</Link>
