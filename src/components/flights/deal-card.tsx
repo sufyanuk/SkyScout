@@ -1,8 +1,11 @@
 import Link from "next/link";
+import { Price } from "@/components/common/price";
 import { ArrowRight, CalendarDays, Clock, Plane } from "lucide-react";
 import { DestinationArtFor } from "@/components/destinations/destination-art-for";
+import { totalPrice } from "@/lib/flights/filtering";
+import { carrierNames } from "@/lib/flights/pricing";
 import type { FlightDeal } from "@/lib/flights/types";
-import { formatDateRange, formatDuration, formatPrice, formatStops } from "@/lib/format";
+import { formatDateRange, formatDuration, formatStops } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { DealRatingBadge, SavingsBadge } from "./badges";
 import { FavoriteButton } from "./favorite-button";
@@ -38,8 +41,9 @@ export function DealCard({
         </div>
         <div className="absolute top-3 right-3 z-10 flex gap-1.5">
           <ShareButton
-            title={`${routeLabel} for ${formatPrice(deal.price)}`}
-            text={`${routeLabel} from ${formatPrice(deal.price)} on SkyScout:`}
+            title={`${routeLabel} for {price}`}
+            text={`${routeLabel} from {price} on SkyScout:`}
+            priceUsd={totalPrice(deal)}
             path={href}
           />
           <FavoriteButton dealId={deal.id} label={`${routeLabel} deal`} refreshOnChange={refreshOnFavoriteChange} />
@@ -76,10 +80,11 @@ export function DealCard({
           <div className="col-span-2 flex items-center gap-1.5">
             <dt className="sr-only">Airline and stops</dt>
             <dd className="truncate">
-              {deal.airline.name} ·{" "}
+              {carrierNames(deal)} ·{" "}
               <span className={deal.outbound.stops === 0 ? "font-medium text-savings" : undefined}>
                 {formatStops(deal.outbound.stops)}
               </span>
+              {deal.selfTransfer && <span className="font-medium text-sunrise"> · Self-transfer</span>}
             </dd>
           </div>
         </dl>
@@ -88,10 +93,10 @@ export function DealCard({
           <div>
             <SavingsBadge percent={deal.savingsPercent} />
             <p className="mt-1.5 flex items-baseline gap-2">
-              <span className="text-2xl font-semibold tracking-tight tabular-nums">{formatPrice(deal.price)}</span>
+              <span className="text-2xl font-semibold tracking-tight tabular-nums"><Price amount={totalPrice(deal)} /></span>
               {deal.typicalPrice > deal.price * 1.04 && (
                 <span className="text-xs text-muted-foreground">
-                  typical <span className="line-through">{formatPrice(deal.typicalPrice)}</span>
+                  typical <span className="line-through"><Price amount={deal.typicalPrice} /></span>
                 </span>
               )}
             </p>
@@ -101,7 +106,7 @@ export function DealCard({
             className="inline-flex h-9 shrink-0 items-center gap-1 rounded-full bg-foreground px-4 text-sm font-semibold text-white transition-colors after:absolute after:inset-0 after:content-[''] hover:bg-primary focus-visible:ring-[3px] focus-visible:ring-ring/40 focus-visible:outline-none"
           >
             View deal <ArrowRight className="size-4" aria-hidden="true" />
-            <span className="sr-only">: {routeLabel}, {formatPrice(deal.price)}</span>
+            <span className="sr-only">: {routeLabel}, <Price amount={totalPrice(deal)} /></span>
           </Link>
         </div>
       </div>

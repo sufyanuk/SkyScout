@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import { formatMoney } from "@/lib/currency";
+import { getCurrency } from "@/lib/services/preferences";
+import { Price } from "@/components/common/price";
 import Link from "next/link";
 import { ArrowRight, BellRing, Heart, History, Search, Sparkles } from "lucide-react";
 import { ProfileForm } from "@/components/account/profile-form";
@@ -7,8 +10,9 @@ import { DealCard } from "@/components/flights/deal-card";
 import { Button } from "@/components/ui/button";
 import { requireUser } from "@/lib/auth/session";
 import { getAirport } from "@/lib/catalog/airports";
+import { locationLabel } from "@/lib/catalog/locations";
 import { db } from "@/lib/db";
-import { formatDateRange, formatPrice, formatRelative } from "@/lib/format";
+import { formatDateRange, formatRelative } from "@/lib/format";
 import { alertRouteLabel, listAlerts } from "@/lib/services/alerts";
 import { listFavorites } from "@/lib/services/favorites";
 import { isoFromDate } from "@/lib/services/mappers";
@@ -17,6 +21,8 @@ import { listSearches } from "@/lib/services/searches";
 export const metadata: Metadata = { title: "Dashboard", robots: { index: false } };
 
 export default async function DashboardPage() {
+  const currency = await getCurrency();
+  const money = (usd: number) => formatMoney(usd, currency);
   const sessionUser = await requireUser("/dashboard");
   const [user, favorites, alerts, searches] = await Promise.all([
     db.user.findUnique({ where: { id: sessionUser.id }, select: { name: true, email: true, homeAirport: true, createdAt: true } }),
@@ -92,11 +98,11 @@ export default async function DashboardPage() {
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block font-semibold">
-                          {getAirport(s.originCode)?.city ?? s.originCode} → {s.destination ? (getAirport(s.destination)?.city ?? s.destination) : "Anywhere"}
+                          {locationLabel(s.originCode)} → {locationLabel(s.destination)}
                         </span>
                         <span className="block truncate text-sm text-muted-foreground">
                           {s.departureDate ? formatDateRange(isoFromDate(s.departureDate), s.returnDate ? isoFromDate(s.returnDate) : null) : "Flexible dates"} ·{" "}
-                          {s.resultCount} results{s.cheapestPrice ? ` from ${formatPrice(s.cheapestPrice)}` : ""}
+                          {s.resultCount} results{s.cheapestPrice ? ` from ${money(s.cheapestPrice)}` : ""}
                         </span>
                       </span>
                       <span className="hidden text-xs text-muted-foreground sm:block">{formatRelative(s.createdAt)}</span>
@@ -133,10 +139,10 @@ export default async function DashboardPage() {
                   <li key={a.id} className="flex items-center justify-between gap-3 text-sm">
                     <span className="min-w-0">
                       <span className="block truncate font-medium">{alertRouteLabel(a)}</span>
-                      <span className="text-xs text-muted-foreground">below {formatPrice(a.maxPrice)}</span>
+                      <span className="text-xs text-muted-foreground">below <Price amount={a.maxPrice} /></span>
                     </span>
                     <span className={a.status === "TRIGGERED" ? "font-semibold text-sunrise" : "text-muted-foreground"}>
-                      {a.status === "TRIGGERED" ? `Hit ${formatPrice(a.triggeredPrice ?? 0)}` : a.status === "PAUSED" ? "Paused" : a.lastSeenPrice ? formatPrice(a.lastSeenPrice) : "—"}
+                      {a.status === "TRIGGERED" ? `Hit ${money(a.triggeredPrice ?? 0)}` : a.status === "PAUSED" ? "Paused" : a.lastSeenPrice ? money(a.lastSeenPrice) : "—"}
                     </span>
                   </li>
                 ))}

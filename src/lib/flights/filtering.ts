@@ -19,7 +19,27 @@ export const EMPTY_FILTERS: FlightFilters = {
   airlines: [],
   departureTimes: [],
   arrivalTimes: [],
+  maxDurationMinutes: null,
+  maxLayoverMinutes: null,
+  transfer: "include",
+  bags: { cabin: 0, checked: 0 },
 };
+
+/** What one traveller actually pays: fare plus any bags they asked for. */
+export function totalPrice(deal: Pick<FlightDeal, "price" | "bagFee">): number {
+  return deal.price + (deal.bagFee ?? 0);
+}
+
+/** Every airline operating a segment (more than one for self-transfer trips). */
+export function carrierCodes(deal: Pick<FlightDeal, "outbound">): string[] {
+  return [...new Set(deal.outbound.segments.map((s) => s.airlineCode))];
+}
+
+/** Longest single connection across both directions, minutes. */
+export function longestLayover(deal: FlightDeal): number {
+  const all = [...deal.outbound.layovers, ...(deal.inbound?.layovers ?? [])];
+  return all.reduce((max, l) => Math.max(max, l.durationMinutes), 0);
+}
 
 /** Bucket a local "YYYY-MM-DDTHH:mm" time into part of the day. */
 export function timeBucket(localDateTime: string): TimeBucket {
@@ -71,12 +91,16 @@ export function matchesTripLength(
 }
 
 export function matchesFilters(deal: FlightDeal, filters: FlightFilters): boolean {
-  if (filters.maxPrice !== null && deal.price > filters.maxPrice) return false;
+  if (filters.maxPrice !== null && totalPrice(deal) > filters.maxPrice) return false;
+  if (filters.transfer === "exclude" && deal.selfTransfer) return false;
+  if (filters.transfer === "only" && !deal.selfTransfer) return false;
+  if (filters.maxDurationMinutes !== null && deal.outbound.durationMinutes > filters.maxDurationMinutes) return false;
+  if (filters.maxLayoverMinutes !== null && longestLayover(deal) > filters.maxLayoverMinutes) return false;
   if (filters.stops.length > 0) {
     const stops = Math.min(2, deal.outbound.stops);
     if (!filters.stops.includes(stops)) return false;
   }
-  if (filters.airlines.length > 0 && !filters.airlines.includes(deal.airline.code)) return false;
+  if (filters.airlines.length > 0 && !carrierCodes(deal).some((c) => filters.airlines.includes(c))) return false;
   if (filters.departureTimes.length > 0 && !filters.departureTimes.includes(timeBucket(deal.outbound.departure))) {
     return false;
   }
@@ -91,10 +115,10 @@ export function totalDuration(deal: FlightDeal): number {
 }
 
 const SORTERS: Record<SortOption, (a: FlightDeal, b: FlightDeal) => number> = {
-  best: (a, b) => b.score - a.score || a.price - b.price,
-  cheapest: (a, b) => a.price - b.price || totalDuration(a) - totalDuration(b),
-  fastest: (a, b) => totalDuration(a) - totalDuration(b) || a.price - b.price,
-  value: (a, b) => b.savingsPercent - a.savingsPercent || a.price - b.price,
+  best: (a, b) => b.score - a.score || totalPrice(a) - totalPrice(b),
+  cheapest: (a, b) => totalPrice(a) - totalPrice(b) || totalDuration(a) - totalDuration(b),
+  fastest: (a, b) => totalDuration(a) - totalDuration(b) || totalPrice(a) - totalPrice(b),
+  value: (a, b) => b.savingsPercent - a.savingsPercent || totalPrice(a) - totalPrice(b),
 };
 
 export function sortDeals(deals: FlightDeal[], sort: SortOption): FlightDeal[] {
@@ -108,24 +132,25 @@ export function computeFacets(deals: FlightDeal[]): SearchFacets {
   let max = -Infinity;
 
   for (const deal of deals) {
-    min = Math.min(min, deal.price);
-    max = Math.max(max, deal.price);
+    const price = totalPrice(deal);
+    min = Math.min(min, price);
+    max = Math.max(max, price);
 
     const a = airlines.get(deal.airline.code);
     if (a) {
       a.count++;
-      a.minPrice = Math.min(a.minPrice, deal.price);
+      a.minPrice = Math.min(a.minPrice, price);
     } else {
-      airlines.set(deal.airline.code, { code: deal.airline.code, name: deal.airline.name, minPrice: deal.price, count: 1 });
+      airlines.set(deal.airline.code, { code: deal.airline.code, name: deal.airline.name, minPrice: price, count: 1 });
     }
 
     const s = Math.min(2, deal.outbound.stops);
     const st = stops.get(s);
     if (st) {
       st.count++;
-      st.minPrice = Math.min(st.minPrice, deal.price);
+      st.minPrice = Math.min(st.minPrice, price);
     } else {
-      stops.set(s, { stops: s, minPrice: deal.price, count: 1 });
+      stops.set(s, { stops: s, minPrice: price, count: 1 });
     }
   }
 

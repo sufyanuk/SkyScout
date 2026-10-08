@@ -1,6 +1,7 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { DEFAULT_ORIGIN, getAirport } from "@/lib/catalog/airports";
+import { CURRENCY_COOKIE, toCurrency, type CurrencyCode } from "@/lib/currency";
 
 export const HOME_AIRPORT_COOKIE = "ss_home";
 
@@ -16,4 +17,9 @@ export async function setHomeAirportCookie(code: string) {
     maxAge: 60 * 60 * 24 * 365,
     sameSite: "lax",
   });
+}
+
+/** The visitor's display currency (cookie → USD). Prices stay USD internally. */
+export async function getCurrency(): Promise<CurrencyCode> {
+  return toCurrency((await cookies()).get(CURRENCY_COOKIE)?.value);
 }

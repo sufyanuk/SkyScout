@@ -13,6 +13,7 @@ import type { ExploreOptions, FlightSearchProvider, SearchOptions } from "../pro
 import type {
   Cabin,
   DealCollection,
+  TransferOption,
   DealQuery,
   DestinationQuote,
   FlightDeal,
@@ -21,7 +22,17 @@ import type {
   IsoDate,
   PricePoint,
 } from "../types";
-import { buildDeal, decodeDealId, routeOptions, typicalPrice, VARIANTS } from "./generator";
+import { bagFeeFor } from "../pricing";
+import {
+  buildDeal,
+  decodeDealId,
+  routeOptions,
+  SELF_TRANSFER_VARIANT,
+  selfTransferOptions,
+  typicalPrice,
+  VARIANTS,
+} from "./generator";
+import { isSingleRoute, makeSearchParams } from "../params";
 import { createRng, hashString } from "./random";
 import { distanceKm } from "@/lib/geo";
 
@@ -39,10 +50,12 @@ function spread(min: number, max: number, count: number): number[] {
   return [...new Set(Array.from({ length: count }, (_, i) => Math.round(min + i * step)))];
 }
 
-function nightsFor(params: FlightSearchParams): number[] {
+function nightsFor(params: FlightSearchParams, count = 4): number[] {
   const range = nightsRange(params.tripLength, { min: params.minNights, max: params.maxNights });
-  return range ? spread(range.min, range.max, 4) : DEFAULT_NIGHTS;
+  return range ? spread(range.min, range.max, count) : DEFAULT_NIGHTS;
 }
+
+const MAX_RANGE_DAYS = 90;
 
 /** Expand the user's (possibly flexible) dates into concrete date pairs. */
 export function datePairs(params: FlightSearchParams, today: IsoDate): DatePair[] {
@@ -62,6 +75,17 @@ export function datePairs(params: FlightSearchParams, today: IsoDate): DatePair[
       const nights = explicitNights ?? (params.oneWay ? null : 7);
       const offsets = params.when === "flexible" ? [-3, -2, -1, 0, 1, 2, 3] : [0];
       pairs = offsets.map((o) => pair(addDays(dep, o), nights));
+      break;
+    }
+    case "range": {
+      // Depart any day inside a window; sample it evenly and try a few stay lengths.
+      const start = params.departure ?? addDays(today, 7);
+      let end = params.departureEnd && params.departureEnd > start ? params.departureEnd : addDays(start, 30);
+      if (diffDays(start, end) > MAX_RANGE_DAYS) end = addDays(start, MAX_RANGE_DAYS);
+      const span = diffDays(start, end);
+      const offsets = spread(0, span, Math.min(span + 1, 10));
+      const nights = params.oneWay ? [null] : nightsFor(params, 3);
+      for (const offset of offsets) for (const n of nights) pairs.push(pair(addDays(start, offset), n));
       break;
     }
     case "weekend": {
@@ -116,29 +140,55 @@ export class MockFlightProvider implements FlightSearchProvider {
   readonly name = "mock";
   private feedCache = new Map<string, FlightDeal[]>();
 
-  private generate(params: FlightSearchParams, today: IsoDate): FlightDeal[] {
-    const pairs = datePairs(params, today);
-    const specific = params.to !== null;
-    const destinations = specific ? [params.to!] : reachableDestinations(params.from);
+  private generate(params: FlightSearchParams, today: IsoDate, transfer: TransferOption = "exclude"): FlightDeal[] {
+    let pairs = datePairs(params, today);
+    const single = isSingleRoute(params);
+    // Broad searches (anywhere / regions / countries) sample fewer dates to stay fast.
+    if (!single && pairs.length > 12) {
+      // Evenly spaced picks (not a fixed stride) so every stay length stays represented.
+      const picks = new Set(Array.from({ length: 12 }, (_, k) => Math.round((k * (pairs.length - 1)) / 11)));
+      pairs = pairs.filter((_, i) => picks.has(i));
+    }
     const deals: FlightDeal[] = [];
+    const add = (deal: FlightDeal | null) => {
+      if (deal) deals.push(deal);
+    };
 
-    for (const to of destinations) {
-      const options = routeOptions(params.from, to);
-      if (options.length === 0) continue;
-      const airlines = specific ? options : options.slice(0, 3);
-      for (const pair of pairs) {
-        const variants = specific
-          ? pairs.length <= 2
-            ? VARIANTS
-            : [0, 3]
-          : [hashString(`${to}${pair.departure}`) % VARIANTS.length];
-        for (const option of airlines) {
-          for (const variant of variants) {
-            const deal = buildDeal(
-              { from: params.from, to, departure: pair.departure, returnDate: pair.returnDate, airline: option.airline.code, variant, cabin: params.cabin },
-              today,
-            );
-            if (deal) deals.push(deal);
+    for (const from of params.origins) {
+      const destinations = params.destinations ?? reachableDestinations(from);
+      for (const to of destinations) {
+        if (to === from) continue;
+        const options = routeOptions(from, to);
+        if (options.length === 0) continue;
+        const base = { from, to, cabin: params.cabin };
+
+        if (transfer !== "only") {
+          const airlines = single ? options : options.slice(0, 3);
+          for (const pair of pairs) {
+            const variants = single
+              ? pairs.length <= 2
+                ? VARIANTS
+                : [0, 3]
+              : [hashString(`${from}${to}${pair.departure}`) % VARIANTS.length];
+            for (const option of airlines) {
+              for (const variant of variants) {
+                add(buildDeal({ ...base, departure: pair.departure, returnDate: pair.returnDate, airline: option.airline.code, variant }, today));
+              }
+            }
+          }
+        }
+
+        if (transfer !== "exclude") {
+          const transfers = single ? selfTransferOptions(from, to) : selfTransferOptions(from, to).slice(0, 1);
+          for (const pair of pairs) {
+            for (const option of transfers) {
+              add(
+                buildDeal(
+                  { ...base, departure: pair.departure, returnDate: pair.returnDate, airline: option.first.code, variant: SELF_TRANSFER_VARIANT },
+                  today,
+                ),
+              );
+            }
           }
         }
       }
@@ -150,10 +200,14 @@ export class MockFlightProvider implements FlightSearchProvider {
 
   async searchFlights(params: FlightSearchParams, options: SearchOptions = {}): Promise<FlightSearchResult> {
     const today = todayIso();
-    const all = this.generate(params, today);
     const filters = { ...EMPTY_FILTERS, ...options.filters };
+    let all = this.generate(params, today, filters.transfer);
+    if (filters.bags.cabin > 0 || filters.bags.checked > 0) {
+      // Generated deals are cached and shared — copy before attaching per-search fees.
+      all = all.map((d) => ({ ...d, bagFee: bagFeeFor(d, filters.bags) }));
+    }
     let deals = sortDeals(all.filter((d) => matchesFilters(d, filters)), options.sort ?? "best");
-    if (params.to === null) deals = capPerDestination(deals, 3);
+    if (!isSingleRoute(params)) deals = capPerDestination(deals, 3);
     return { params, deals, facets: computeFacets(all) };
   }
 
@@ -202,21 +256,15 @@ export class MockFlightProvider implements FlightSearchProvider {
   async exploreDestinations(origin: string, options: ExploreOptions = {}): Promise<DestinationQuote[]> {
     if (!getAirport(origin)) return [];
     const today = todayIso();
-    const params: FlightSearchParams = {
+    const params = makeSearchParams({
       from: origin,
-      to: null,
       when: options.when ?? "anytime",
-      departure: null,
-      returnDate: null,
-      oneWay: false,
-      adults: 1,
-      children: 0,
       cabin: options.cabin ?? "economy",
-      tripLength: options.when === "weekend" ? "weekend" : "any",
-      minNights: null,
-      maxNights: null,
-    };
-    const deals = options.when === "weekend" || options.when === "next-month"
+      tripLength: options.when === "weekend" ? "weekend" : options.nights ? "custom" : "any",
+      minNights: options.nights ?? null,
+      maxNights: options.nights ?? null,
+    });
+    const deals = options.when === "weekend" || options.when === "next-month" || options.nights
       ? this.generate(params, today)
       : [...this.generate(params, today), ...this.feed(origin, params.cabin, today)];
 
@@ -265,20 +313,7 @@ export class MockFlightProvider implements FlightSearchProvider {
   async getSimilarDeals(deal: FlightDeal, limit = 6): Promise<FlightDeal[]> {
     const today = todayIso();
     const sameRoute = this.generate(
-      {
-        from: deal.origin.code,
-        to: deal.destination.code,
-        when: "anytime",
-        departure: null,
-        returnDate: null,
-        oneWay: deal.returnDate === null,
-        adults: 1,
-        children: 0,
-        cabin: deal.cabin,
-        tripLength: "any",
-        minNights: null,
-        maxNights: null,
-      },
+      makeSearchParams({ from: deal.origin.code, to: deal.destination.code, oneWay: deal.returnDate === null, cabin: deal.cabin }),
       today,
     )
       .filter((d) => d.id !== deal.id && d.departureDate !== deal.departureDate)

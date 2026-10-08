@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useId, useState } from "react";
+import { useCurrency } from "@/components/common/currency-provider";
 import { RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -9,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { TIME_BUCKET_LABELS } from "@/lib/flights/filtering";
 import { CABINS, TIME_BUCKETS, type SearchFacets, type TimeBucket } from "@/lib/flights/types";
-import { CABIN_LABELS, formatPrice } from "@/lib/format";
+import { CABIN_LABELS } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useSearchNavigation } from "./search-navigation";
 
@@ -23,7 +24,21 @@ const TRIP_LENGTH_OPTIONS = [
   { value: "custom", label: "Custom" },
 ];
 const STOP_LABELS = ["Direct", "1 stop", "2+ stops"];
-export const FILTER_KEYS = ["maxPrice", "stops", "airlines", "dep", "arr", "length", "minNights", "maxNights"];
+export const FILTER_KEYS = [
+  "maxPrice",
+  "stops",
+  "airlines",
+  "dep",
+  "arr",
+  "length",
+  "minNights",
+  "maxNights",
+  "maxDuration",
+  "maxLayover",
+  "transfer",
+  "cabinBags",
+  "checkedBags",
+];
 
 export function activeFilterCount(params: URLSearchParams) {
   return FILTER_KEYS.filter((k) => params.get(k) && !(k === "length" && params.get(k) === "any")).length;
@@ -42,6 +57,7 @@ export function FilterPanel(props: { facets: SearchFacets; hasExactDates: boolea
 }
 
 function FilterPanelInner({ facets, hasExactDates }: { facets: SearchFacets; hasExactDates: boolean }) {
+  const { format } = useCurrency();
   const nav = useSearchNavigation();
   const prefix = useContext(IdPrefix);
   const maxPrice = nav.get("maxPrice");
@@ -73,7 +89,7 @@ function FilterPanelInner({ facets, hasExactDates }: { facets: SearchFacets; has
         )}
       </div>
 
-      <FilterSection title="Price" hint={facets.priceRange ? `From ${formatPrice(facets.priceRange.min)}` : undefined}>
+      <FilterSection title="Price" hint={facets.priceRange ? `From ${format(facets.priceRange.min)}` : undefined}>
         <RadioGroup
           value={priceMode}
           onValueChange={(value) => {
@@ -83,7 +99,7 @@ function FilterPanelInner({ facets, hasExactDates }: { facets: SearchFacets; has
         >
           <RadioRow value="any" label="Any price" />
           {PRICE_PRESETS.map((p) => (
-            <RadioRow key={p} value={String(p)} label={`Under ${formatPrice(p)}`} />
+            <RadioRow key={p} value={String(p)} label={`Under ${format(p)}`} />
           ))}
           <RadioRow value="custom" label="Custom" />
         </RadioGroup>
@@ -125,7 +141,7 @@ function FilterPanelInner({ facets, hasExactDates }: { facets: SearchFacets; has
               key={s}
               id={`stops-${s}`}
               label={STOP_LABELS[s]}
-              meta={facet ? formatPrice(facet.minPrice) : "—"}
+              meta={facet ? format(facet.minPrice) : "—"}
               checked={stops.includes(String(s))}
               disabled={!facet}
               onChange={() => toggleIn("stops", stops, String(s))}
@@ -138,6 +154,7 @@ function FilterPanelInner({ facets, hasExactDates }: { facets: SearchFacets; has
         <RadioGroup value={when} onValueChange={(value) => nav.update({ when: value === "exact" ? null : value })}>
           <RadioRow value="exact" label="Exact dates" disabled={!hasExactDates} />
           <RadioRow value="flexible" label="Flexible (± 3 days)" disabled={!hasExactDates} />
+          <RadioRow value="range" label="Date range (from your departure date)" disabled={!hasExactDates} />
           <RadioRow value="anytime" label="Any time (next 3 months)" />
           <RadioRow value="weekend" label="Upcoming weekends" />
           <RadioRow value="next-month" label="Next month" />
@@ -179,7 +196,7 @@ function FilterPanelInner({ facets, hasExactDates }: { facets: SearchFacets; has
                 key={a.code}
                 id={`airline-${a.code}`}
                 label={a.name}
-                meta={formatPrice(a.minPrice)}
+                meta={format(a.minPrice)}
                 checked={airlines.includes(a.code)}
                 onChange={() => toggleIn("airlines", airlines, a.code)}
               />
@@ -187,6 +204,70 @@ function FilterPanelInner({ facets, hasExactDates }: { facets: SearchFacets; has
           </div>
         </FilterSection>
       )}
+
+      <FilterSection title="Bags (per traveller)">
+        <div className="grid grid-cols-2 gap-3">
+          <ChipGroup
+            label="Cabin bag"
+            value={nav.get("cabinBags") ?? "0"}
+            options={[
+              { value: "0", label: "None" },
+              { value: "1", label: "1" },
+            ]}
+            onChange={(v) => nav.update({ cabinBags: v === "0" ? null : v })}
+          />
+          <ChipGroup
+            label="Checked"
+            value={nav.get("checkedBags") ?? "0"}
+            options={[
+              { value: "0", label: "None" },
+              { value: "1", label: "1" },
+              { value: "2", label: "2" },
+            ]}
+            onChange={(v) => nav.update({ checkedBags: v === "0" ? null : v })}
+          />
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">Fares that don&apos;t include these bags show the fee in the price.</p>
+      </FilterSection>
+
+      <FilterSection title="Connections">
+        <RadioGroup value={nav.get("transfer") ?? "include"} onValueChange={(v) => nav.update({ transfer: v === "include" ? null : v })}>
+          <RadioRow value="include" label="Include self-transfer" />
+          <RadioRow value="exclude" label="Protected connections only" />
+          <RadioRow value="only" label="Self-transfer only" />
+        </RadioGroup>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Self-transfer combines separate tickets: often cheaper, but you re-check bags and missed connections aren&apos;t covered.
+        </p>
+      </FilterSection>
+
+      <FilterSection title="Duration & layovers">
+        <div className="grid grid-cols-2 gap-3">
+          <ChipGroup
+            label="Max journey"
+            value={nav.get("maxDuration") ?? "any"}
+            options={[
+              { value: "any", label: "Any" },
+              { value: "8", label: "8h" },
+              { value: "12", label: "12h" },
+              { value: "18", label: "18h" },
+              { value: "24", label: "24h" },
+            ]}
+            onChange={(v) => nav.update({ maxDuration: v === "any" ? null : v })}
+          />
+          <ChipGroup
+            label="Max layover"
+            value={nav.get("maxLayover") ?? "any"}
+            options={[
+              { value: "any", label: "Any" },
+              { value: "2", label: "2h" },
+              { value: "4", label: "4h" },
+              { value: "8", label: "8h" },
+            ]}
+            onChange={(v) => nav.update({ maxLayover: v === "any" ? null : v })}
+          />
+        </div>
+      </FilterSection>
 
       <TimeFilter title="Departure time" paramKey="dep" />
       <TimeFilter title="Arrival time" paramKey="arr" />
@@ -316,6 +397,41 @@ function CheckRow({
         {label}
       </Label>
       {meta && <span className="text-xs tabular-nums text-muted-foreground">{meta}</span>}
+    </div>
+  );
+}
+
+function ChipGroup({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div role="radiogroup" aria-label={label}>
+      <p className="mb-1.5 text-xs font-medium text-muted-foreground">{label}</p>
+      <div className="flex flex-wrap gap-1.5">
+        {options.map((o) => (
+          <button
+            key={o.value}
+            type="button"
+            role="radio"
+            aria-checked={value === o.value}
+            onClick={() => onChange(o.value)}
+            className={cn(
+              "min-w-9 rounded-full border px-2.5 py-1 text-[13px] font-medium transition",
+              value === o.value ? "border-primary bg-accent text-accent-foreground" : "hover:bg-muted",
+            )}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

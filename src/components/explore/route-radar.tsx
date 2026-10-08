@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { Airport, DestinationQuote } from "@/lib/flights/types";
 import { bearingDeg, distanceKm } from "@/lib/geo";
-import { formatPrice } from "@/lib/format";
 
 const SIZE = 600;
 const C = SIZE / 2;
@@ -18,10 +17,13 @@ export function RouteRadar({
   origin,
   quotes,
   hrefFor,
+  money,
 }: {
   origin: Airport;
   quotes: DestinationQuote[];
   hrefFor: (q: DestinationQuote) => string;
+  /** Formats a USD amount in the visitor's currency (SVG text needs plain strings). */
+  money: (usd: number) => string;
 }) {
   const maxKm = kmForHours(16);
   const radius = (km: number) => R * Math.sqrt(Math.min(km, maxKm) / maxKm);
@@ -122,7 +124,7 @@ export function RouteRadar({
             href={hrefFor(q)}
             className="group outline-none"
           >
-            <title>{`${q.destination.city}, ${q.destination.country} — from ${formatPrice(q.cheapest.price)}`}</title>
+            <title>{`${q.destination.city}, ${q.destination.country} — from ${money(q.cheapest.price)}`}</title>
             <circle cx={x} cy={y} r="14" fill="transparent" />
             <circle
               cx={x}
@@ -150,7 +152,7 @@ export function RouteRadar({
                   strokeWidth="4"
                   paintOrder="stroke"
                 >
-                  {q.destination.city} {formatPrice(q.cheapest.price)}
+                  {q.destination.city} {money(q.cheapest.price)}
                 </text>
               </g>
             )}
@@ -175,7 +177,7 @@ export function RouteRadar({
             strokeWidth="4"
             paintOrder="stroke"
           >
-            {q.destination.city} {formatPrice(q.cheapest.price)}
+            {q.destination.city} {money(q.cheapest.price)}
           </text>
         ))}
       </g>

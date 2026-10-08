@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
+import { Price } from "@/components/common/price";
 import Link from "next/link";
 import { Heart } from "lucide-react";
 import { EmptyState } from "@/components/common/empty-state";
 import { DealCard } from "@/components/flights/deal-card";
 import { Button } from "@/components/ui/button";
 import { requireUser } from "@/lib/auth/session";
-import { formatPrice, formatRelative } from "@/lib/format";
+import { formatRelative } from "@/lib/format";
 import { listFavorites, type SavedDeal } from "@/lib/services/favorites";
 import { cn } from "@/lib/utils";
 
@@ -68,7 +69,7 @@ export default async function FavoritesPage() {
                     <span className="font-semibold">No longer available</span>
                   ) : diff !== 0 ? (
                     <span className={cn("font-semibold", diff < 0 ? "text-savings" : "text-sunrise")}>
-                      {diff < 0 ? "▼" : "▲"} {formatPrice(Math.abs(diff))} since you saved it
+                      {diff < 0 ? "▼" : "▲"} <Price amount={Math.abs(diff)} /> since you saved it
                     </span>
                   ) : (
                     <span>Price unchanged</span>

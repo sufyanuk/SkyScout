@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Price } from "@/components/common/price";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BellPlus, CalendarCheck2, Clock, Coins, Globe2, Languages, Lightbulb, Plane, Search, Sun, TrendingDown } from "lucide-react";
@@ -14,7 +15,8 @@ import { getAirline } from "@/lib/catalog/airlines";
 import { getAirport } from "@/lib/catalog/airports";
 import { DESTINATIONS, getDestination, MONTH_NAMES } from "@/lib/catalog/destinations";
 import { getFlightProvider } from "@/lib/flights";
-import { formatDateRange, formatDuration, formatPrice, formatStops } from "@/lib/format";
+import { makeSearchParams } from "@/lib/flights/params";
+import { formatDateRange, formatDuration, formatStops } from "@/lib/format";
 import { buildSearchHref } from "@/lib/search-params";
 import { getHomeAirport } from "@/lib/services/preferences";
 import { absoluteUrl } from "@/lib/site";
@@ -54,19 +56,7 @@ export default async function DestinationPage({ params, searchParams }: PageProp
   const destAirport = getAirport(d.airport)!;
   const provider = getFlightProvider();
 
-  const base = {
-    from: origin,
-    to: d.airport,
-    departure: null,
-    returnDate: null,
-    oneWay: false,
-    adults: 1,
-    children: 0,
-    cabin: "economy" as const,
-    tripLength: "any" as const,
-    minNights: null,
-    maxNights: null,
-  };
+  const base = makeSearchParams({ from: origin, to: d.airport });
   const [cheapestResult, history, nextMonth] = await Promise.all([
     provider.searchFlights({ ...base, when: "anytime" }, { sort: "cheapest" }),
     provider.getPriceHistory(origin, d.airport, "economy", 90),
@@ -153,8 +143,8 @@ export default async function DestinationPage({ params, searchParams }: PageProp
         <section aria-label="Flight facts" className="flex flex-col gap-4 rounded-[2rem] border bg-card p-5 shadow-card sm:p-6 lg:flex-row lg:items-center">
           <OriginPicker value={origin} query="" className="lg:max-w-60" />
           <dl className="grid flex-1 grid-cols-2 gap-4 md:grid-cols-4">
-            <Stat icon={TrendingDown} label="Cheapest right now" value={cheapest ? formatPrice(cheapest.price) : "—"} hint={cheapest ? formatDateRange(cheapest.departureDate, cheapest.returnDate) : undefined} highlight />
-            <Stat icon={Coins} label="Average price" value={average ? formatPrice(average) : "—"} hint="Last 90 days, return" />
+            <Stat icon={TrendingDown} label="Cheapest right now" value={cheapest ? <Price amount={cheapest.price} /> : "—"} hint={cheapest ? formatDateRange(cheapest.departureDate, cheapest.returnDate) : undefined} highlight />
+            <Stat icon={Coins} label="Average price" value={average ? <Price amount={average} /> : "—"} hint="Last 90 days, return" />
             <Stat icon={Clock} label="Fastest flight" value={fastest ? formatDuration(fastest.outbound.durationMinutes) : "—"} hint={fastest ? formatStops(fastest.outbound.stops) : undefined} />
             <Stat icon={Sun} label="Best time to go" value={d.bestMonths.slice(0, 3).map((m) => MONTH_NAMES[m - 1].slice(0, 3)).join(", ")} hint={d.climate} />
           </dl>
@@ -176,7 +166,7 @@ export default async function DestinationPage({ params, searchParams }: PageProp
                       </span>
                     </span>
                     <span className="text-right">
-                      <span className="block text-lg font-semibold tabular-nums">{formatPrice(deal.price)}</span>
+                      <span className="block text-lg font-semibold tabular-nums"><Price amount={deal.price} /></span>
                       {deal.savingsPercent >= 10 && <span className="block text-xs font-semibold text-savings">−{deal.savingsPercent}%</span>}
                     </span>
                   </Link>
@@ -219,7 +209,7 @@ export default async function DestinationPage({ params, searchParams }: PageProp
                     <li key={a.code} className="flex items-center gap-3">
                       {airline && <AirlineMark airline={airline} size="sm" />}
                       <span className="flex-1 text-sm font-medium">{a.name}</span>
-                      <span className="text-sm text-muted-foreground">from {formatPrice(a.minPrice)}</span>
+                      <span className="text-sm text-muted-foreground">from <Price amount={a.minPrice} /></span>
                     </li>
                   );
                 })}
@@ -303,7 +293,7 @@ export default async function DestinationPage({ params, searchParams }: PageProp
   );
 }
 
-function Stat({ icon: Icon, label, value, hint, highlight }: { icon: typeof Sun; label: string; value: string; hint?: string; highlight?: boolean }) {
+function Stat({ icon: Icon, label, value, hint, highlight }: { icon: typeof Sun; label: string; value: React.ReactNode; hint?: string; highlight?: boolean }) {
   return (
     <div>
       <dt className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ArrowRight, Copy, ExternalLink, Info } from "lucide-react";
 import { toast } from "sonner";
+import { useCurrency } from "@/components/common/currency-provider";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,7 +20,7 @@ interface BookDialogProps {
     route: string;
     dates: string;
     airline: string;
-    price: string;
+    priceUsd: number;
     travelers: number;
     flights: string[];
   };
@@ -36,10 +37,12 @@ interface BookDialogProps {
  */
 export function BookDialog({ summary, provider, label = "Search this flight", size = "xl", className }: BookDialogProps) {
   const [open, setOpen] = useState(false);
+  const { format } = useCurrency();
+  const price = format(summary.priceUsd);
   const itinerary = [
     `${summary.route} · ${summary.dates}`,
     `${summary.airline} — ${summary.flights.join(", ")}`,
-    `${summary.price} per traveller (${summary.travelers} traveller${summary.travelers > 1 ? "s" : ""})`,
+    `${price} per traveller (${summary.travelers} traveller${summary.travelers > 1 ? "s" : ""})`,
   ].join("\n");
 
   async function copy() {
@@ -71,7 +74,7 @@ export function BookDialog({ summary, provider, label = "Search this flight", si
           <p className="mt-2">{summary.airline}</p>
           <p className="text-muted-foreground">{summary.flights.join(" · ")}</p>
           <p className="mt-2 text-lg font-semibold">
-            {summary.price} <span className="text-sm font-normal text-muted-foreground">per traveller</span>
+            {price} <span className="text-sm font-normal text-muted-foreground">per traveller</span>
           </p>
         </div>
         {provider === "mock" && (

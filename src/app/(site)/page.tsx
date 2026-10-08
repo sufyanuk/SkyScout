@@ -1,19 +1,23 @@
 import Link from "next/link";
-import { BellRing, CalendarHeart, Compass, Globe2, Plane, Sparkles, TicketPercent, TrendingDown } from "lucide-react";
+import { Price } from "@/components/common/price";
+import { ArrowRight, BellRing, CalendarHeart, Compass, Globe2, Luggage, Plane, Sparkles, TicketPercent, TrendingDown, Wallet } from "lucide-react";
 import { JsonLd } from "@/components/common/json-ld";
 import { SectionHeader } from "@/components/common/section-header";
 import { DestinationCard } from "@/components/destinations/destination-card";
 import { OriginPicker } from "@/components/explore/origin-picker";
 import { DealCard } from "@/components/flights/deal-card";
+import { ForecastChip } from "@/components/flights/forecast";
 import { SearchBox } from "@/components/search/search-box";
 import { Button } from "@/components/ui/button";
 import { getAirport } from "@/lib/catalog/airports";
 import { DESTINATIONS } from "@/lib/catalog/destinations";
 import { todayIso } from "@/lib/dates";
 import { getFlightProvider } from "@/lib/flights";
-import { formatPrice } from "@/lib/format";
+import { forecastFare } from "@/lib/insights/forecast";
+import { tripCost } from "@/lib/insights/trip-cost";
 import { buildSearchHref } from "@/lib/search-params";
-import { getHomeAirport } from "@/lib/services/preferences";
+import { formatMoney } from "@/lib/currency";
+import { getCurrency, getHomeAirport } from "@/lib/services/preferences";
 import { absoluteUrl, SITE } from "@/lib/site";
 
 export default async function HomePage() {
@@ -21,13 +25,27 @@ export default async function HomePage() {
   const airport = getAirport(origin)!;
   const provider = getFlightProvider();
   const today = todayIso();
+  const currency = await getCurrency();
 
-  const [best, weekend, longHaul, quotes] = await Promise.all([
+  const TRIP_BUDGET = 800;
+  const TRIP_NIGHTS = 5;
+  const [best, weekend, longHaul, quotes, fiveNightQuotes] = await Promise.all([
     provider.getDeals({ origin, collection: "best", limit: 6 }),
     provider.getDeals({ origin, collection: "weekend", limit: 4 }),
     provider.getDeals({ origin, collection: "long-haul", limit: 3 }),
     provider.exploreDestinations(origin),
+    provider.exploreDestinations(origin, { nights: TRIP_NIGHTS }),
   ]);
+
+  // Live examples for the "Only on SkyScout" section.
+  const forecastDeal = best[0] ?? null;
+  const forecast = forecastDeal
+    ? forecastFare(forecastDeal, await provider.getPriceHistory(forecastDeal.origin.code, forecastDeal.destination.code), today)
+    : null;
+  const budgetTrips = fiveNightQuotes
+    .map((q) => ({ q, cost: tripCost(q.destination.code, q.cheapest.price, TRIP_NIGHTS, "budget") }))
+    .filter((t): t is { q: typeof t.q; cost: NonNullable<typeof t.cost> } => !!t.cost && t.cost.total <= TRIP_BUDGET)
+    .sort((a, b) => a.cost.total - b.cost.total);
   const cheapest = quotes.slice(0, 8);
   const priceByAirport = new Map(quotes.map((q) => [q.destination.code, q.cheapest.price]));
   const trending = DESTINATIONS.filter((d) => d.trending && d.airport !== origin).slice(0, 6);
@@ -36,8 +54,9 @@ export default async function HomePage() {
     { label: "Anywhere", icon: Globe2, href: buildSearchHref({ from: origin, to: null, extra: { sort: "cheapest" } }) },
     { label: "This weekend", icon: CalendarHeart, href: buildSearchHref({ from: origin, when: "weekend", extra: { sort: "cheapest" } }) },
     { label: "Next month", icon: Sparkles, href: buildSearchHref({ from: origin, when: "next-month", extra: { sort: "cheapest" } }) },
-    { label: "Under $300", icon: TicketPercent, href: buildSearchHref({ from: origin, extra: { maxPrice: 300, sort: "cheapest" } }) },
+    { label: `Under ${formatMoney(300, currency)}`, icon: TicketPercent, href: buildSearchHref({ from: origin, extra: { maxPrice: 300, sort: "cheapest" } }) },
     { label: "Direct flights only", icon: Plane, href: buildSearchHref({ from: origin, extra: { stops: "0", sort: "cheapest" } }) },
+    { label: `Trip under ${formatMoney(800, currency)}`, icon: Wallet, href: `/explore?from=${origin}&budget=800&nights=5&style=budget` },
   ];
 
   return (
@@ -138,7 +157,7 @@ export default async function HomePage() {
                     </span>
                   </span>
                   <span className="text-right">
-                    <span className="block text-lg font-semibold tabular-nums">{formatPrice(q.cheapest.price)}</span>
+                    <span className="block text-lg font-semibold tabular-nums"><Price amount={q.cheapest.price} /></span>
                     {q.cheapest.savingsPercent >= 10 && (
                       <span className="block text-xs font-medium text-savings">−{q.cheapest.savingsPercent}%</span>
                     )}
@@ -204,6 +223,118 @@ export default async function HomePage() {
             </div>
           </section>
         )}
+
+        {/* Differentiators */}
+        <section aria-labelledby="only-here">
+          <SectionHeader
+            id="only-here"
+            eyebrow="Only on SkyScout"
+            title="Smarter than a list of prices"
+            description="Three things most flight sites won't tell you — built into every search."
+          />
+          <div className="grid gap-5 lg:grid-cols-3">
+            {/* Fare Forecast */}
+            <article className="flex flex-col rounded-[2rem] border bg-card p-6 shadow-card">
+              <span className="flex size-11 items-center justify-center rounded-2xl bg-accent text-primary">
+                <Sparkles className="size-5" aria-hidden="true" />
+              </span>
+              <h3 className="mt-4 text-lg font-semibold">Fare Forecast: buy or wait?</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Every fare gets a recommendation with a confidence score, based on its route&apos;s price history, how it
+                compares with the usual price and how close departure is.
+              </p>
+              {forecastDeal && forecast && (
+                <Link
+                  href={`/deals/${forecastDeal.id}`}
+                  className="mt-5 block rounded-2xl bg-muted p-4 transition hover:bg-accent"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold">
+                      {forecastDeal.origin.code} → {forecastDeal.destination.city}
+                    </span>
+                    <ForecastChip forecast={forecast} />
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">{forecast.headline}</p>
+                  <p className="mt-2 text-sm font-semibold">
+                    <Price amount={forecastDeal.price} />{" "}
+                    <span className="font-normal text-muted-foreground">· {forecastDeal.savingsPercent}% below typical</span>
+                  </p>
+                </Link>
+              )}
+            </article>
+
+            {/* Trip budget */}
+            <article className="flex flex-col rounded-[2rem] border bg-card p-6 shadow-card">
+              <span className="flex size-11 items-center justify-center rounded-2xl bg-sunrise-soft text-sunrise">
+                <Wallet className="size-5" aria-hidden="true" />
+              </span>
+              <h3 className="mt-4 text-lg font-semibold">
+                Where can <Price amount={TRIP_BUDGET} /> take you?
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Search by total trip budget — flight plus stay and daily spending — not just the fare. Here&apos;s{" "}
+                {TRIP_NIGHTS} nights from {airport.city} on a budget:
+              </p>
+              <ul className="mt-4 space-y-2">
+                {budgetTrips.slice(0, 3).map(({ q, cost }) => (
+                  <li key={q.destination.code} className="flex items-center justify-between rounded-xl bg-muted px-3 py-2 text-sm">
+                    <span className="font-medium">{q.destination.city}</span>
+                    <span className="tabular-nums">
+                      <span className="font-semibold">
+                        <Price amount={cost.total} />
+                      </span>{" "}
+                      <span className="text-xs text-muted-foreground">all-in</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href={`/explore?from=${origin}&budget=${TRIP_BUDGET}&nights=${TRIP_NIGHTS}&style=budget`}
+                className="mt-auto inline-flex items-center gap-1 pt-4 text-sm font-semibold text-primary hover:underline"
+              >
+                See all {budgetTrips.length} trips within budget <ArrowRight className="size-4" aria-hidden="true" />
+              </Link>
+            </article>
+
+            {/* True price */}
+            <article className="flex flex-col rounded-[2rem] border bg-card p-6 shadow-card">
+              <span className="flex size-11 items-center justify-center rounded-2xl bg-savings-soft text-savings">
+                <Luggage className="size-5" aria-hidden="true" />
+              </span>
+              <h3 className="mt-4 text-lg font-semibold">True price, bags included</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Tell us your bags once and every fare is re-priced with the fees you&apos;d actually pay — so a
+                &ldquo;cheap&rdquo; basic fare can&apos;t hide a pricier total. Self-transfer combos are clearly flagged.
+              </p>
+              <ul className="mt-4 space-y-2 text-sm">
+                <li className="flex justify-between rounded-xl bg-muted px-3 py-2">
+                  <span className="text-muted-foreground">Basic fare</span>
+                  <span className="font-semibold">
+                    <Price amount={189} />
+                  </span>
+                </li>
+                <li className="flex justify-between rounded-xl bg-muted px-3 py-2">
+                  <span className="text-muted-foreground">+ 1 checked bag each way</span>
+                  <span className="font-semibold">
+                    <Price amount={110} />
+                  </span>
+                </li>
+                <li className="flex justify-between rounded-xl bg-savings-soft px-3 py-2 text-savings">
+                  <span>What you really pay</span>
+                  <span className="font-semibold">
+                    <Price amount={299} />
+                  </span>
+                </li>
+              </ul>
+              <Link
+                href={buildSearchHref({ from: origin, extra: { checkedBags: 1, sort: "cheapest" } })}
+                className="mt-auto inline-flex items-center gap-1 pt-4 text-sm font-semibold text-primary hover:underline"
+              >
+                Search with 1 checked bag <ArrowRight className="size-4" aria-hidden="true" />
+              </Link>
+            </article>
+          </div>
+        </section>
 
         {/* How it works + alerts */}
         <section aria-labelledby="how" className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">

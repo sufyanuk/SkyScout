@@ -1,8 +1,9 @@
 "use client";
 
 import { useId, useMemo, useRef, useState } from "react";
+import { useCurrency } from "@/components/common/currency-provider";
 import type { PricePoint } from "@/lib/flights/types";
-import { formatDate, formatPrice } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 
 interface PriceHistoryChartProps {
   points: PricePoint[];
@@ -20,6 +21,7 @@ const PAD = { top: 16, right: 16, bottom: 28, left: 48 };
  * the two reference lines (typical price, this deal) are labelled directly.
  */
 export function PriceHistoryChart({ points, typicalPrice, dealPrice, title = "Price history" }: PriceHistoryChartProps) {
+  const { format } = useCurrency();
   const gradientId = useId().replace(/:/g, "");
   const svgRef = useRef<SVGSVGElement>(null);
   const [hover, setHover] = useState<number | null>(null);
@@ -69,8 +71,8 @@ export function PriceHistoryChart({ points, typicalPrice, dealPrice, title = "Pr
   return (
     <figure className="space-y-3">
       <figcaption className="sr-only">
-        {title}: lowest fares over the last {points.length} days ranged from {formatPrice(points[lowIndex].price)} to{" "}
-        {formatPrice(Math.max(...points.map((p) => p.price)))}, averaging {formatPrice(average)}. This deal is {formatPrice(dealPrice)}.
+        {title}: lowest fares over the last {points.length} days ranged from {format(points[lowIndex].price)} to{" "}
+        {format(Math.max(...points.map((p) => p.price)))}, averaging {format(average)}. This deal is {format(dealPrice)}.
       </figcaption>
       <div className="relative">
         <svg
@@ -96,7 +98,7 @@ export function PriceHistoryChart({ points, typicalPrice, dealPrice, title = "Pr
             <g key={t}>
               <line x1={PAD.left} x2={W - PAD.right} y1={y(t)} y2={y(t)} stroke="var(--border)" strokeWidth="1" />
               <text x={PAD.left - 8} y={y(t) + 4} textAnchor="end" fontSize="11" fill="var(--muted-foreground)">
-                {formatPrice(t)}
+                {format(t)}
               </text>
             </g>
           ))}
@@ -111,11 +113,11 @@ export function PriceHistoryChart({ points, typicalPrice, dealPrice, title = "Pr
           {/* Reference lines, labelled directly */}
           <line x1={PAD.left} x2={W - PAD.right} y1={y(typicalPrice)} y2={y(typicalPrice)} stroke="var(--muted-foreground)" strokeWidth="1.5" strokeDasharray="5 5" opacity="0.7" />
           <text x={W - PAD.right} y={y(typicalPrice) - 6} textAnchor="end" fontSize="11" fontWeight="600" fill="var(--muted-foreground)">
-            Typical {formatPrice(typicalPrice)}
+            Typical {format(typicalPrice)}
           </text>
           <line x1={PAD.left} x2={W - PAD.right} y1={y(dealPrice)} y2={y(dealPrice)} stroke="var(--sunrise)" strokeWidth="1.5" strokeDasharray="2 4" strokeLinecap="round" />
           <text x={W - PAD.right} y={y(dealPrice) + 15} textAnchor="end" fontSize="11" fontWeight="700" fill="var(--foreground)">
-            This deal {formatPrice(dealPrice)}
+            This deal {format(dealPrice)}
           </text>
 
           <path d={line} fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
@@ -140,7 +142,7 @@ export function PriceHistoryChart({ points, typicalPrice, dealPrice, title = "Pr
             }}
           >
             <p className="text-muted-foreground">{formatDate(hovered.date)}</p>
-            <p className="text-sm font-semibold tabular-nums">{formatPrice(hovered.price)}</p>
+            <p className="text-sm font-semibold tabular-nums">{format(hovered.price)}</p>
           </div>
         )}
       </div>
@@ -148,12 +150,12 @@ export function PriceHistoryChart({ points, typicalPrice, dealPrice, title = "Pr
       <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
         <p>
           <span className="text-muted-foreground">Lowest seen </span>
-          <span className="font-semibold tabular-nums">{formatPrice(points[lowIndex].price)}</span>
+          <span className="font-semibold tabular-nums">{format(points[lowIndex].price)}</span>
           <span className="text-muted-foreground"> on {formatDate(points[lowIndex].date)}</span>
         </p>
         <p>
           <span className="text-muted-foreground">{points.length}-day average </span>
-          <span className="font-semibold tabular-nums">{formatPrice(average)}</span>
+          <span className="font-semibold tabular-nums">{format(average)}</span>
         </p>
       </div>
 
@@ -171,7 +173,7 @@ export function PriceHistoryChart({ points, typicalPrice, dealPrice, title = "Pr
               {[...points].reverse().map((p) => (
                 <tr key={p.date} className="border-t">
                   <td className="px-3 py-1.5">{formatDate(p.date)}</td>
-                  <td className="px-3 py-1.5 text-right tabular-nums">{formatPrice(p.price)}</td>
+                  <td className="px-3 py-1.5 text-right tabular-nums">{format(p.price)}</td>
                 </tr>
               ))}
             </tbody>

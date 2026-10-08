@@ -7,18 +7,20 @@ import { cn } from "@/lib/utils";
 interface TravelerSelectorProps {
   adults: number;
   childCount: number;
-  onChange: (value: { adults: number; children: number }) => void;
+  infants: number;
+  onChange: (value: { adults: number; children: number; infants: number }) => void;
   className?: string;
 }
 
-export function travelerLabel(adults: number, children: number) {
+export function travelerLabel(adults: number, children: number, infants = 0) {
   const parts = [`${adults} adult${adults > 1 ? "s" : ""}`];
   if (children) parts.push(`${children} child${children > 1 ? "ren" : ""}`);
+  if (infants) parts.push(`${infants} infant${infants > 1 ? "s" : ""}`);
   return parts.join(", ");
 }
 
-export function TravelerSelector({ adults, childCount, onChange, className }: TravelerSelectorProps) {
-  const total = adults + childCount;
+export function TravelerSelector({ adults, childCount, infants, onChange, className }: TravelerSelectorProps) {
+  const total = adults + childCount + infants;
   return (
     <Popover>
       <PopoverTrigger
@@ -26,12 +28,12 @@ export function TravelerSelector({ adults, childCount, onChange, className }: Tr
           "flex min-h-[60px] w-full items-center gap-3 rounded-2xl border border-input bg-card px-4 text-left outline-none transition hover:border-foreground/25 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/15",
           className,
         )}
-        aria-label={`Travellers: ${travelerLabel(adults, childCount)}`}
+        aria-label={`Travellers: ${travelerLabel(adults, childCount, infants)}`}
       >
         <Users className="size-[18px] text-muted-foreground" aria-hidden="true" />
         <span className="flex min-w-0 flex-col py-2">
           <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Travellers</span>
-          <span className="truncate text-[15px] font-semibold">{travelerLabel(adults, childCount)}</span>
+          <span className="truncate text-[15px] font-semibold">{travelerLabel(adults, childCount, infants)}</span>
         </span>
       </PopoverTrigger>
       <PopoverContent className="w-80" align="end">
@@ -42,7 +44,7 @@ export function TravelerSelector({ adults, childCount, onChange, className }: Tr
             value={adults}
             min={1}
             max={9 - childCount}
-            onChange={(v) => onChange({ adults: v, children: childCount })}
+            onChange={(v) => onChange({ adults: v, children: childCount, infants: Math.min(infants, v) })}
           />
           <Stepper
             label="Children"
@@ -50,10 +52,18 @@ export function TravelerSelector({ adults, childCount, onChange, className }: Tr
             value={childCount}
             min={0}
             max={Math.min(8, 9 - adults)}
-            onChange={(v) => onChange({ adults, children: v })}
+            onChange={(v) => onChange({ adults, children: v, infants })}
+          />
+          <Stepper
+            label="Infants"
+            hint="Under 2, on a lap · ~10% of a fare"
+            value={infants}
+            min={0}
+            max={Math.min(adults, 4)}
+            onChange={(v) => onChange({ adults, children: childCount, infants: v })}
           />
           <p className="text-xs text-muted-foreground">
-            Up to 9 travellers per search. Prices are shown per person; totals cover all {total}.
+            Up to 9 seated travellers, plus one lap infant per adult. Prices are per person; totals cover all {total}.
           </p>
         </div>
       </PopoverContent>

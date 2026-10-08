@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Price } from "@/components/common/price";
 import Link from "next/link";
 import { BellOff, BellRing, CheckCircle2, History, PauseCircle, Radar, Sparkles } from "lucide-react";
 import { AlertActions } from "@/components/alerts/alert-actions";
@@ -10,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getAirport } from "@/lib/catalog/airports";
 import { todayIso } from "@/lib/dates";
-import { formatDate, formatPrice, formatRelative } from "@/lib/format";
+import { formatDate, formatRelative } from "@/lib/format";
 import { alertRouteLabel, alertSearchHref, checkDueAlerts, listAlerts, type AlertWithEvents } from "@/lib/services/alerts";
 import { DURATION_LABELS, FLEX_LABELS, isoFromDate } from "@/lib/services/mappers";
 import { getHomeAirport } from "@/lib/services/preferences";
@@ -179,16 +180,16 @@ function AlertCard({ alert }: { alert: AlertWithEvents }) {
             {statusBadge}
           </div>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Notify me below <strong className="text-foreground">{formatPrice(alert.maxPrice)}</strong>
+            Notify me below <strong className="text-foreground"><Price amount={alert.maxPrice} /></strong>
           </p>
         </div>
         <div className="text-right">
           <p className="text-xs text-muted-foreground">{alert.status === "TRIGGERED" ? "Matched at" : "Cheapest now"}</p>
           <p className={cn("text-2xl font-semibold tabular-nums", alert.status === "TRIGGERED" && "text-sunrise")}>
             {alert.status === "TRIGGERED" && alert.triggeredPrice !== null
-              ? formatPrice(alert.triggeredPrice)
+              ? <Price amount={alert.triggeredPrice} />
               : alert.lastSeenPrice !== null
-                ? formatPrice(alert.lastSeenPrice)
+                ? <Price amount={alert.lastSeenPrice} />
                 : "—"}
           </p>
         </div>
@@ -206,7 +207,7 @@ function AlertCard({ alert }: { alert: AlertWithEvents }) {
             <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, (alert.maxPrice / alert.lastSeenPrice) * 100)}%` }} />
           </div>
           <p className="mt-1.5 text-xs text-muted-foreground">
-            {formatPrice(Math.max(0, alert.lastSeenPrice - alert.maxPrice))} above your target
+            <Price amount={Math.max(0, alert.lastSeenPrice - alert.maxPrice)} /> above your target
             {alert.lastCheckedAt && ` · checked ${formatRelative(alert.lastCheckedAt)}`}
           </p>
         </div>
@@ -263,11 +264,11 @@ function AlertsLanding({ from, to, max }: { from: string; to: string | null; max
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="font-semibold">{e.route}</p>
-                  <p className="text-sm text-muted-foreground">Notify me below {formatPrice(e.target)}</p>
+                  <p className="text-sm text-muted-foreground">Notify me below <Price amount={e.target} /></p>
                 </div>
                 <div className="text-right">
                   {e.hit ? <Badge variant="sunrise">Triggered</Badge> : <Badge variant="savings">Watching</Badge>}
-                  <p className={cn("mt-1 text-xl font-semibold tabular-nums", e.hit && "text-sunrise")}>{formatPrice(e.now)}</p>
+                  <p className={cn("mt-1 text-xl font-semibold tabular-nums", e.hit && "text-sunrise")}><Price amount={e.now} /></p>
                 </div>
               </div>
             </li>

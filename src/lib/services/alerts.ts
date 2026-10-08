@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { getAirport } from "@/lib/catalog/airports";
 import { addDays } from "@/lib/dates";
 import { getFlightProvider } from "@/lib/flights";
+import { makeSearchParams } from "@/lib/flights/params";
 import type { FlightDeal, FlightSearchParams } from "@/lib/flights/types";
 import { formatPrice } from "@/lib/format";
 import { buildSearchHref } from "@/lib/search-params";
@@ -31,20 +32,15 @@ export function alertRouteLabel(alert: Pick<PriceAlert, "originCode" | "destinat
 export function alertToSearch(alert: PriceAlert): FlightSearchParams {
   const when = FLEX_TO_WHEN[alert.dateFlexibility];
   const departure = alert.departureDate && when !== "anytime" ? isoFromDate(alert.departureDate) : null;
-  return {
+  return makeSearchParams({
     from: alert.originCode,
     to: alert.destinationCode,
     when,
     departure,
     returnDate: departure ? addDays(departure, DURATION_NIGHTS[alert.tripDuration]) : null,
-    oneWay: false,
-    adults: 1,
-    children: 0,
     cabin: CABIN_FROM_DB[alert.cabin],
     tripLength: departure ? "any" : DURATION_TO_TRIP[alert.tripDuration],
-    minNights: null,
-    maxNights: null,
-  };
+  });
 }
 
 export function alertSearchHref(alert: PriceAlert) {

@@ -1,10 +1,13 @@
 import { z } from "zod";
-import { getAirport, DEFAULT_ORIGIN } from "@/lib/catalog/airports";
+import { DEFAULT_ORIGIN } from "@/lib/catalog/airports";
+import { resolveLocation } from "@/lib/catalog/locations";
+import { makeSearchParams } from "@/lib/flights/params";
 import { isIsoDate } from "@/lib/dates";
 import {
   CABINS,
   SORTS,
   TIME_BUCKETS,
+  TRANSFER_OPTIONS,
   TRIP_LENGTHS,
   WHEN_OPTIONS,
   type FlightFilters,
@@ -32,25 +35,29 @@ const list = (v: string | string[] | undefined) =>
     .map((s) => s.trim())
     .filter(Boolean);
 
-const airportCode = z
+/** Airport ("DOH"), country ("AE") or region ("europe") token. */
+const locationToken = z
   .string()
   .trim()
-  .toUpperCase()
-  .refine((c) => !!getAirport(c), "Unknown airport code");
+  .transform((t) => resolveLocation(t)?.token ?? t)
+  .refine((t) => !!resolveLocation(t), "Unknown airport, country or region");
 
 const isoDate = z.string().refine(isIsoDate, "Expected a date like 2026-11-12");
 const intIn = (min: number, max: number) => z.coerce.number().int().min(min).max(max);
 
 /** Strict schema used by the public API — invalid input → 400. */
 export const flightsQuerySchema = z.object({
-  from: airportCode,
-  to: z.union([airportCode, z.literal("anywhere"), z.literal("ANYWHERE")]).optional(),
+  from: locationToken,
+  to: z.union([z.literal("anywhere"), z.literal("ANYWHERE"), locationToken]).optional(),
   departure: isoDate.optional(),
+  /** End of the departure window when when=range. */
+  until: isoDate.optional(),
   return: isoDate.optional(),
   when: z.enum(WHEN_OPTIONS).optional(),
   trip: z.enum(["oneway", "return"]).optional(),
   adults: intIn(1, 9).optional(),
   children: intIn(0, 8).optional(),
+  infants: intIn(0, 4).optional(),
   cabin: z.enum(CABINS).optional(),
   length: z.enum(TRIP_LENGTHS).optional(),
   minNights: intIn(1, 30).optional(),
@@ -63,6 +70,13 @@ export const flightsQuerySchema = z.object({
   sort: z.enum(SORTS).optional(),
   view: z.enum(VIEWS).optional(),
   limit: intIn(1, 500).optional(),
+  /** Hours. */
+  maxDuration: intIn(1, 72).optional(),
+  /** Hours. */
+  maxLayover: intIn(1, 48).optional(),
+  transfer: z.enum(TRANSFER_OPTIONS).optional(),
+  cabinBags: intIn(0, 1).optional(),
+  checkedBags: intIn(0, 2).optional(),
 });
 
 export type FlightsQuery = z.infer<typeof flightsQuerySchema>;
@@ -96,34 +110,43 @@ export interface ParsedSearch {
 
 export function toParsedSearch(q: Partial<FlightsQuery>, fallbackOrigin = DEFAULT_ORIGIN): ParsedSearch {
   const from = q.from ?? fallbackOrigin;
-  const toRaw = q.to?.toUpperCase();
-  const to = toRaw && toRaw !== "ANYWHERE" && toRaw !== from ? toRaw : null;
+  const toRaw = q.to && q.to.toLowerCase() !== "anywhere" ? q.to : null;
+  const to = toRaw && toRaw !== from ? toRaw : null;
   const departure = q.departure ?? null;
-  const returnDate = q.trip === "oneway" ? null : q.return && departure && q.return > departure ? q.return : null;
   const oneWay = q.trip === "oneway";
-  const when = q.when ?? (departure ? "exact" : "anytime");
+  const returnDate = oneWay ? null : q.return && departure && q.return > departure ? q.return : null;
+  let when = q.when ?? (departure ? "exact" : "anytime");
+  if ((when === "exact" || when === "flexible" || when === "range") && !departure) when = "anytime";
+  const lengthGiven = q.minNights !== undefined || q.maxNights !== undefined;
+  const adults = q.adults ?? 1;
 
   return {
-    params: {
+    params: makeSearchParams({
       from,
       to,
-      when: (when === "exact" || when === "flexible") && !departure ? "anytime" : when,
+      when,
       departure,
-      returnDate,
+      departureEnd: when === "range" ? (q.until ?? null) : null,
+      returnDate: when === "range" ? null : returnDate,
       oneWay,
-      adults: q.adults ?? 1,
+      adults,
       children: q.children ?? 0,
+      infants: Math.min(q.infants ?? 0, adults),
       cabin: q.cabin ?? "economy",
-      tripLength: q.length ?? "any",
+      tripLength: q.length ?? (lengthGiven ? "custom" : "any"),
       minNights: q.minNights ?? null,
       maxNights: q.maxNights ?? null,
-    },
+    }),
     filters: {
       maxPrice: q.maxPrice ?? null,
       stops: q.stops ?? [],
       airlines: q.airlines ?? [],
       departureTimes: q.dep ?? [],
       arrivalTimes: q.arr ?? [],
+      maxDurationMinutes: q.maxDuration ? q.maxDuration * 60 : null,
+      maxLayoverMinutes: q.maxLayover ? q.maxLayover * 60 : null,
+      transfer: q.transfer ?? "include",
+      bags: { cabin: q.cabinBags ?? 0, checked: q.checkedBags ?? 0 },
     },
     sort: q.sort ?? "best",
     view: q.view ?? "list",
@@ -157,6 +180,7 @@ export function buildSearchHref(input: {
   oneWay?: boolean;
   adults?: number;
   children?: number;
+  infants?: number;
   cabin?: string;
   extra?: Record<string, string | number | undefined | null>;
 }): string {
@@ -169,6 +193,7 @@ export function buildSearchHref(input: {
   if (input.oneWay) sp.set("trip", "oneway");
   if (input.adults && input.adults > 1) sp.set("adults", String(input.adults));
   if (input.children) sp.set("children", String(input.children));
+  if (input.infants) sp.set("infants", String(input.infants));
   if (input.cabin && input.cabin !== "economy") sp.set("cabin", input.cabin);
   for (const [k, v] of Object.entries(input.extra ?? {})) {
     if (v !== undefined && v !== null && v !== "") sp.set(k, String(v));

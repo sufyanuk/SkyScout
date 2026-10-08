@@ -2,6 +2,7 @@
 
 import { Share2 } from "lucide-react";
 import { toast } from "sonner";
+import { useCurrency } from "@/components/common/currency-provider";
 import { cn } from "@/lib/utils";
 
 interface ShareButtonProps {
@@ -9,11 +10,18 @@ interface ShareButtonProps {
   text: string;
   /** Path to share, e.g. /deals/DOH-BKK-… */
   path: string;
+  /** Replaces "{price}" in title/text, formatted in the visitor's currency. */
+  priceUsd?: number;
   className?: string;
   withText?: boolean;
 }
 
-export function ShareButton({ title, text, path, className, withText }: ShareButtonProps) {
+export function ShareButton({ title: rawTitle, text: rawText, path, priceUsd, className, withText }: ShareButtonProps) {
+  const { format } = useCurrency();
+  const fill = (t: string) => (priceUsd === undefined ? t : t.replaceAll("{price}", format(priceUsd)));
+  const title = fill(rawTitle);
+  const text = fill(rawText);
+
   async function share() {
     const url = new URL(path, window.location.origin).toString();
     if (navigator.share) {

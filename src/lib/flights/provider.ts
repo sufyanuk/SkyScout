@@ -20,6 +20,8 @@ export interface ExploreOptions {
   maxPrice?: number | null;
   directOnly?: boolean;
   when?: "anytime" | "weekend" | "next-month";
+  /** Only consider trips of exactly this many nights (whole-trip budgeting). */
+  nights?: number | null;
 }
 
 /**

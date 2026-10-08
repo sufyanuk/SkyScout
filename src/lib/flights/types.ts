@@ -19,8 +19,19 @@ export const TRIP_LENGTHS = ["any", "weekend", "short", "week", "two-weeks", "cu
 export type TripLength = (typeof TRIP_LENGTHS)[number];
 
 /** Flexible-date shortcuts offered next to the date pickers. */
-export const WHEN_OPTIONS = ["exact", "flexible", "anytime", "weekend", "next-month"] as const;
+/** "range" = depart any day inside a window (departure → departureEnd). */
+export const WHEN_OPTIONS = ["exact", "flexible", "range", "anytime", "weekend", "next-month"] as const;
 export type WhenOption = (typeof WHEN_OPTIONS)[number];
+
+/** Self-transfer itineraries combine separate tickets on different airlines. */
+export const TRANSFER_OPTIONS = ["include", "exclude", "only"] as const;
+export type TransferOption = (typeof TRANSFER_OPTIONS)[number];
+
+/** Bags each traveller wants; fares that don't include them get the fee added. */
+export interface BagRequest {
+  cabin: number;
+  checked: number;
+}
 
 export type Region =
   | "middle-east"
@@ -134,20 +145,33 @@ export interface FlightDeal {
   baggage: BaggageInfo;
   fare: FareDetails;
   seatsLeft: number | null;
+  /** Separate tickets on different airlines, with a self-managed connection. */
+  selfTransfer: boolean;
+  /** Per-traveller fees for the bags requested in the search (0 if none needed). */
+  bagFee: number;
   /** Great-circle distance between origin and destination, km. */
   distanceKm: number;
 }
 
 export interface FlightSearchParams {
+  /** Location token as typed in the URL: airport ("DOH"), country ("AE") or region ("europe"). */
   from: string;
-  /** IATA code or null for "anywhere". */
+  /** Location token, or null for "anywhere". */
   to: string | null;
+  /** Airports `from` resolves to. */
+  origins: string[];
+  /** Airports `to` resolves to, or null for anywhere. */
+  destinations: string[] | null;
   when: WhenOption;
   departure: IsoDate | null;
+  /** Last possible departure date when when === "range". */
+  departureEnd: IsoDate | null;
   returnDate: IsoDate | null;
   oneWay: boolean;
   adults: number;
   children: number;
+  /** Lap infants (under 2), priced at 10% of an adult fare. */
+  infants: number;
   cabin: Cabin;
   tripLength: TripLength;
   minNights: number | null;
@@ -161,6 +185,12 @@ export interface FlightFilters {
   airlines: string[];
   departureTimes: TimeBucket[];
   arrivalTimes: TimeBucket[];
+  /** Longest acceptable outbound journey, minutes. */
+  maxDurationMinutes: number | null;
+  /** Longest acceptable single layover, minutes. */
+  maxLayoverMinutes: number | null;
+  transfer: TransferOption;
+  bags: BagRequest;
 }
 
 export interface SearchFacets {

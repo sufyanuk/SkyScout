@@ -39,6 +39,8 @@ export interface ItineraryKey {
 
 export const MOCK_PROVIDER_NAME = "mock";
 export const VARIANTS = [0, 1, 2, 3] as const;
+/** Variant 4 = self-transfer: two separate tickets on different airlines. */
+export const SELF_TRANSFER_VARIANT = 4;
 
 const CABIN_TO_CODE: Record<Cabin, string> = { economy: "E", premium: "P", business: "B", first: "F" };
 const CODE_TO_CABIN: Record<string, Cabin> = { E: "economy", P: "premium", B: "business", F: "first" };
@@ -65,7 +67,8 @@ export function decodeDealId(id: string): ItineraryKey | null {
   if (!getAirport(from) || !getAirport(to) || from === to) return null;
   if (!departure || (ret !== "OW" && !returnDate)) return null;
   if (returnDate && diffDays(departure, returnDate) < 1) return null;
-  if (!getAirline(airline) || !cabin || !VARIANTS.includes(variant as (typeof VARIANTS)[number])) return null;
+  const knownVariant = VARIANTS.includes(variant as (typeof VARIANTS)[number]) || variant === SELF_TRANSFER_VARIANT;
+  if (!getAirline(airline) || !cabin || !knownVariant) return null;
   return { from, to, departure, returnDate, airline, variant, cabin };
 }
 
@@ -170,6 +173,53 @@ function routingFor(key: ItineraryKey, option: RouteOption): string[] {
   return best ? [first, best.code] : option.via;
 }
 
+// ─── Self-transfer ────────────────────────────────────────────────────────────
+
+export interface SelfTransferOption {
+  first: Airline;
+  hub: string;
+  second: Airline;
+  detour: number;
+}
+
+const selfTransferCache = new Map<string, SelfTransferOption[]>();
+
+/**
+ * "Virtual interlining": combine the cheapest carrier into a hub with a
+ * different carrier out of it. Cheaper, but the traveller re-checks bags and
+ * isn't protected if the first flight is late — the UI says so clearly.
+ */
+export function selfTransferOptions(from: string, to: string): SelfTransferOption[] {
+  const cacheKey = `${from}-${to}`;
+  const cached = selfTransferCache.get(cacheKey);
+  if (cached) return cached;
+
+  const direct = km(from, to);
+  const options: SelfTransferOption[] = [];
+  if (direct >= 1200) {
+    const cheapest = (candidates: Airline[]) => [...candidates].sort((a, b) => a.priceFactor - b.priceFactor)[0];
+    for (const hub of CONNECTING_HUBS) {
+      if (hub === from || hub === to) continue;
+      const d1 = km(from, hub);
+      const d2 = km(hub, to);
+      const detour = (d1 + d2) / direct;
+      if (d1 < 300 || d2 < 300 || detour > 1.35) continue;
+      const first = cheapest(AIRLINES.filter((a) => (a.hubs.includes(from) || a.hubs.includes(hub)) && d1 <= maxRange(a)));
+      if (!first) continue;
+      const second = cheapest(
+        AIRLINES.filter((a) => a.code !== first.code && (a.hubs.includes(hub) || a.hubs.includes(to)) && d2 <= maxRange(a)),
+      );
+      if (second) options.push({ first, hub, second, detour });
+    }
+  }
+  const unique = options
+    .sort((a, b) => a.detour - b.detour)
+    .filter((o, i, arr) => arr.findIndex((x) => x.first.code === o.first.code) === i)
+    .slice(0, 3);
+  selfTransferCache.set(cacheKey, unique);
+  return unique;
+}
+
 // ─── Schedules ────────────────────────────────────────────────────────────────
 
 const DEPARTURE_SLOTS = [
@@ -189,7 +239,13 @@ function aircraftFor(distance: number, rng: Rng): string {
   return rng.pick(["Boeing 777-300ER", "Airbus A350-900", "Boeing 787-9", "Airbus A350-1000", "Airbus A380"]);
 }
 
-function buildSlice(rng: Rng, airline: Airline, points: string[], date: IsoDate): FlightSlice {
+function buildSlice(
+  rng: Rng,
+  legAirlines: Airline[],
+  points: string[],
+  date: IsoDate,
+  layoverRange: [number, number] = [65, 290],
+): FlightSlice {
   const [h, m] = rng.pick(DEPARTURE_SLOTS);
   const d = parseIsoDate(date);
   const origin = getAirport(points[0])!;
@@ -205,6 +261,7 @@ function buildSlice(rng: Rng, airline: Airline, points: string[], date: IsoDate)
     const distance = distanceKm(a, b);
     const duration = round5(Math.max(50, 28 + distance / 13.4));
     const arrival = cursor + duration * 60_000;
+    const airline = legAirlines[Math.min(i, legAirlines.length - 1)];
     segments.push({
       flightNumber: `${airline.code} ${rng.int(airline.lowCost ? 1000 : 100, airline.lowCost ? 1999 : 989)}`,
       airlineCode: airline.code,
@@ -217,7 +274,7 @@ function buildSlice(rng: Rng, airline: Airline, points: string[], date: IsoDate)
     });
     cursor = arrival;
     if (i < points.length - 2) {
-      const layover = round5(rng.int(65, 290));
+      const layover = round5(rng.int(layoverRange[0], layoverRange[1]));
       layovers.push({ airport: b.code, durationMinutes: layover });
       cursor += layover * 60_000;
     }
@@ -301,6 +358,18 @@ function fareFor(airline: Airline, cabin: Cabin, variant: number): FareDetails {
   return { fareBrand: `${cabin === "premium" ? "Premium" : "Economy"} Classic`, refundable: false, changeFee: 75, seatSelection: "free", mealsIncluded: true };
 }
 
+function selfTransferBaggage(option: SelfTransferOption, cabin: Cabin): BaggageInfo {
+  // Allowance is only as good as the stingier of the two tickets.
+  const a = baggageFor(option.first, cabin, 0);
+  const b = baggageFor(option.second, cabin, 0);
+  return {
+    personalItem: true,
+    cabinKg: Math.min(a.cabinKg, b.cabinKg),
+    checkedBags: Math.min(a.checkedBags, b.checkedBags),
+    checkedKg: Math.min(a.checkedKg, b.checkedKg),
+  };
+}
+
 function scoreFor(deal: Omit<FlightDeal, "score">): number {
   const savingsPts = Math.min(6, deal.savingsPercent / 10);
   const idealMinutes = 28 + deal.distanceKm / 13.4;
@@ -308,6 +377,7 @@ function scoreFor(deal: Omit<FlightDeal, "score">): number {
   const depHour = Number(deal.outbound.departure.slice(11, 13));
   let convenience = 1.5 - deal.outbound.stops * 0.35 - (depHour < 5 ? 0.4 : 0);
   if (deal.baggage.checkedBags > 0) convenience += 0.2;
+  if (deal.selfTransfer) convenience -= 0.6;
   const score = savingsPts + durationPts + Math.max(0, Math.min(1.5, convenience));
   return Math.round(Math.min(10, score) * 10) / 10;
 }
@@ -326,30 +396,39 @@ export function buildDeal(key: ItineraryKey, today: IsoDate): FlightDeal | null 
   const cacheKey = `${id}@${today}`;
   if (dealCache.has(cacheKey)) return dealCache.get(cacheKey)!;
 
-  const option = routeOptions(key.from, key.to).find((o) => o.airline.code === key.airline);
-  if (!option) {
+  const selfTransfer = key.variant === SELF_TRANSFER_VARIANT;
+  const option = selfTransfer
+    ? null
+    : routeOptions(key.from, key.to).find((o) => o.airline.code === key.airline);
+  const transferOption = selfTransfer
+    ? selfTransferOptions(key.from, key.to).find((o) => o.first.code === key.airline)
+    : null;
+  if (!option && !transferOption) {
     remember(cacheKey, null);
     return null;
   }
 
   const rng = createRng(id);
-  const airline = option.airline;
+  const airline = option?.airline ?? transferOption!.first;
   const origin = getAirport(key.from)!;
   const destination = getAirport(key.to)!;
-  const via = routingFor(key, option);
+  const via = option ? routingFor(key, option) : [transferOption!.hub];
+  const outboundAirlines = transferOption ? [transferOption.first, transferOption.second] : [airline];
+  const inboundAirlines = transferOption ? [transferOption.second, transferOption.first] : [airline];
+  // Separate tickets need time to collect and re-check bags.
+  const layovers: [number, number] = transferOption ? [150, 420] : [65, 290];
 
-  const outbound = buildSlice(rng, airline, [key.from, ...via, key.to], key.departure);
+  const outbound = buildSlice(rng, outboundAirlines, [key.from, ...via, key.to], key.departure, layovers);
   const inbound = key.returnDate
-    ? buildSlice(rng, airline, [key.to, ...[...via].reverse(), key.from], key.returnDate)
+    ? buildSlice(rng, inboundAirlines, [key.to, ...[...via].reverse(), key.from], key.returnDate, layovers)
     : null;
 
   const typical = typicalPrice(key.from, key.to, key.cabin, key.departure, !key.returnDate);
   const lead = diffDays(today, key.departure);
   const leadFactor = lead < 10 ? 1.18 : lead < 21 ? 1.06 : 1;
-  const price = Math.max(
-    29,
-    Math.round(typical * airline.priceFactor * STOP_FACTOR[Math.min(2, via.length)] * dealMultiplier(rng) * leadFactor),
-  );
+  const priceFactor = transferOption ? (transferOption.first.priceFactor + transferOption.second.priceFactor) / 2 : airline.priceFactor;
+  const stopFactor = transferOption ? 0.8 : STOP_FACTOR[Math.min(2, via.length)];
+  const price = Math.max(29, Math.round(typical * priceFactor * stopFactor * dealMultiplier(rng) * leadFactor));
   const savingsPercent = Math.max(0, Math.min(90, Math.round(((typical - price) / typical) * 100)));
 
   const partial: Omit<FlightDeal, "score"> = {
@@ -369,9 +448,15 @@ export function buildDeal(key: ItineraryKey, today: IsoDate): FlightDeal | null 
     currency: "USD",
     savingsPercent,
     rating: ratingFor(savingsPercent),
-    baggage: baggageFor(airline, key.cabin, key.variant),
-    fare: fareFor(airline, key.cabin, key.variant),
+    baggage: transferOption
+      ? selfTransferBaggage(transferOption, key.cabin)
+      : baggageFor(airline, key.cabin, key.variant),
+    fare: transferOption
+      ? { fareBrand: "Self-transfer · 2 tickets", refundable: false, changeFee: null, seatSelection: "paid", mealsIncluded: !transferOption.first.lowCost && !transferOption.second.lowCost }
+      : fareFor(airline, key.cabin, key.variant),
     seatsLeft: rng.chance(0.3) ? rng.int(1, 7) : null,
+    selfTransfer: !!transferOption,
+    bagFee: 0,
     distanceKm: Math.round(distanceKm(origin, destination)),
   };
   const deal: FlightDeal = { ...partial, score: scoreFor(partial) };

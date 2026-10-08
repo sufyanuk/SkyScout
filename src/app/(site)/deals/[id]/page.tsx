@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import { formatMoney } from "@/lib/currency";
+import { getCurrency } from "@/lib/services/preferences";
+import { Price } from "@/components/common/price";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -21,6 +24,10 @@ import { SectionHeader } from "@/components/common/section-header";
 import { DestinationArtFor } from "@/components/destinations/destination-art-for";
 import { DealRatingBadge, SavingsBadge, AirlineMark } from "@/components/flights/badges";
 import { BookDialog } from "@/components/flights/book-dialog";
+import { FareForecastPanel } from "@/components/flights/forecast";
+import { TripCostCard } from "@/components/flights/trip-cost-card";
+import { bagFeeFor, carrierNames, groupTotal } from "@/lib/flights/pricing";
+import { forecastFare } from "@/lib/insights/forecast";
 import { DealCard } from "@/components/flights/deal-card";
 import { FavoriteButton } from "@/components/flights/favorite-button";
 import { FlightTimeline } from "@/components/flights/flight-timeline";
@@ -68,18 +75,34 @@ export async function generateMetadata({ params }: PageProps<"/deals/[id]">): Pr
 }
 
 export default async function DealPage({ params, searchParams }: PageProps<"/deals/[id]">) {
-  const deal = await loadDeal((await params).id);
-  if (!deal) notFound();
+  const currency = await getCurrency();
+  const money = (usd: number) => formatMoney(usd, currency);
+  const baseDeal = await loadDeal((await params).id);
+  if (!baseDeal) notFound();
   const sp = await searchParams;
-  const travelers = Math.min(9, Math.max(1, Number(sp.travelers) || 1));
+  const int = (v: unknown, min: number, max: number, fallback: number) =>
+    Math.min(max, Math.max(min, Math.floor(Number(v)) || fallback));
+  const seated = int(sp.travelers, 1, 9, 1);
+  const infants = Math.min(seated, int(sp.infants, 0, 4, 0));
+  const bags = { cabin: int(sp.cabinBags, 0, 1, 0), checked: int(sp.checkedBags, 0, 2, 0) };
+  // Price the fare with the bags the traveller asked for, as on the results page.
+  const deal = { ...baseDeal, bagFee: bagFeeFor(baseDeal, bags) };
+  const perPerson = deal.price + deal.bagFee;
+  const party = { seated, infants };
+  const travelers = seated + infants;
   const provider = getFlightProvider();
-  const departed = deal.departureDate < todayIso();
+  const today = todayIso();
+  const departed = deal.departureDate < today;
 
   const [history, similar] = await Promise.all([
     provider.getPriceHistory(deal.origin.code, deal.destination.code, deal.cabin, 90),
     provider.getSimilarDeals(deal, 6),
   ]);
   const destination = getDestinationByAirport(deal.destination.code);
+  const forecast = departed ? null : forecastFare(deal, history, today);
+  const alertTarget = Math.max(20, Math.floor((deal.price * 0.9) / 5) * 5);
+  const alertHref = `/alerts?from=${deal.origin.code}&to=${deal.destination.code}&max=${alertTarget}`;
+  const carriers = carrierNames(deal);
   const flights = [...deal.outbound.segments, ...(deal.inbound?.segments ?? [])].map((s) => s.flightNumber);
   const routeLabel = `${deal.origin.city} → ${deal.destination.city}`;
 
@@ -156,7 +179,7 @@ export default async function DealPage({ params, searchParams }: PageProps<"/dea
             <div className="flex flex-wrap items-center gap-4 p-5 sm:p-6">
               <AirlineMark airline={deal.airline} size="lg" />
               <div className="min-w-0 flex-1">
-                <p className="font-semibold">{deal.airline.name}</p>
+                <p className="font-semibold">{carriers}</p>
                 <p className="text-sm text-muted-foreground">
                   {deal.fare.fareBrand}
                   {deal.airline.alliance ? ` · ${deal.airline.alliance}` : ""}
@@ -175,6 +198,19 @@ export default async function DealPage({ params, searchParams }: PageProps<"/dea
               </dl>
             </div>
           </section>
+
+          {deal.selfTransfer && (
+            <div role="note" className="rounded-2xl border border-sunrise/30 bg-sunrise-soft p-4 text-sm text-sunrise">
+              <p className="font-semibold">Self-transfer itinerary — two separate tickets</p>
+              <p className="mt-1">
+                In {deal.outbound.layovers.map((l) => l.airport).join(", ")} you&apos;ll collect your bags, re-check them and
+                pass security again. If the first flight is delayed, the second airline isn&apos;t obliged to rebook you, so
+                we&apos;ve only shown connections of 2½ hours or more.
+              </p>
+            </div>
+          )}
+
+          {forecast && <FareForecastPanel forecast={forecast} alertHref={alertHref} />}
 
           {departed && (
             <div role="status" className="rounded-2xl border border-sunrise/30 bg-sunrise-soft p-4 text-sm text-sunrise">
@@ -213,7 +249,7 @@ export default async function DealPage({ params, searchParams }: PageProps<"/dea
               <FareItem
                 icon={RefreshCcw}
                 ok={deal.fare.changeFee !== null}
-                title={deal.fare.changeFee === null ? "Changes not allowed" : deal.fare.changeFee === 0 ? "Free date changes" : `Changes for ${formatPrice(deal.fare.changeFee)}`}
+                title={deal.fare.changeFee === null ? "Changes not allowed" : deal.fare.changeFee === 0 ? "Free date changes" : `Changes for ${money(deal.fare.changeFee)}`}
                 text="Plus any fare difference"
               />
               <FareItem
@@ -244,6 +280,13 @@ export default async function DealPage({ params, searchParams }: PageProps<"/dea
             </div>
             <PriceHistoryChart points={history} typicalPrice={deal.typicalPrice} dealPrice={deal.price} />
           </section>
+
+          <TripCostCard
+            destination={deal.destination.code}
+            city={deal.destination.city}
+            flightUsd={perPerson}
+            nights={deal.nights}
+          />
         </div>
 
         {/* Price panel */}
@@ -251,21 +294,31 @@ export default async function DealPage({ params, searchParams }: PageProps<"/dea
           <div className="sticky top-24 space-y-4">
             <div className="rounded-[2rem] border bg-card p-6 shadow-lift">
               <SavingsBadge percent={deal.savingsPercent} />
-              <p className="mt-3 text-5xl font-semibold tracking-tight tabular-nums">{formatPrice(deal.price)}</p>
+              <p className="mt-3 text-5xl font-semibold tracking-tight tabular-nums">
+                <Price amount={perPerson} />
+              </p>
               <p className="mt-1 text-sm text-muted-foreground">
                 per person · {deal.returnDate ? "return" : "one-way"} · {CABIN_LABELS[deal.cabin].toLowerCase()}
               </p>
+              {deal.bagFee > 0 && (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Fare <Price amount={deal.price} /> + bags <Price amount={deal.bagFee} />
+                </p>
+              )}
               {deal.typicalPrice > deal.price && (
                 <p className="mt-3 text-sm">
-                  Typically <span className="font-semibold line-through decoration-muted-foreground/60">{formatPrice(deal.typicalPrice)}</span> —
-                  you save <span className="font-semibold text-savings">{formatPrice(deal.typicalPrice - deal.price)}</span>
+                  Typically <span className="font-semibold line-through decoration-muted-foreground/60"><Price amount={deal.typicalPrice} /></span> —
+                  you save <span className="font-semibold text-savings"><Price amount={deal.typicalPrice - deal.price} /></span>
                 </p>
               )}
               {travelers > 1 && (
                 <p className="mt-3 flex items-center gap-2 rounded-2xl bg-muted px-3 py-2 text-sm">
                   <Users className="size-4 text-muted-foreground" aria-hidden="true" />
                   <span>
-                    <strong>{formatPrice(deal.price * travelers)}</strong> total for {travelers} travellers
+                    <strong>
+                      <Price amount={groupTotal(deal, party)} />
+                    </strong>{" "}
+                    total for {travelers} travellers{infants ? ` (incl. ${infants} lap infant${infants > 1 ? "s" : ""})` : ""}
                   </span>
                 </p>
               )}
@@ -291,8 +344,8 @@ export default async function DealPage({ params, searchParams }: PageProps<"/dea
                 summary={{
                   route: routeLabel,
                   dates: formatDateRange(deal.departureDate, deal.returnDate),
-                  airline: deal.airline.name,
-                  price: formatPrice(deal.price),
+                  airline: carriers,
+                  priceUsd: perPerson,
                   travelers,
                   flights,
                 }}
@@ -302,8 +355,9 @@ export default async function DealPage({ params, searchParams }: PageProps<"/dea
                 <ShareButton
                   withText
                   className="w-full"
-                  title={title(deal)}
-                  text={`${routeLabel} from ${formatPrice(deal.price)} (${formatDateRange(deal.departureDate, deal.returnDate)}) on SkyScout:`}
+                  title={`${deal.origin.city} to ${deal.destination.city} from {price}`}
+                  text={`${routeLabel} from {price} (${formatDateRange(deal.departureDate, deal.returnDate)}) on SkyScout:`}
+                  priceUsd={perPerson}
                   path={`/deals/${deal.id}`}
                 />
               </div>
@@ -314,10 +368,10 @@ export default async function DealPage({ params, searchParams }: PageProps<"/dea
                 <BellPlus className="size-4 text-primary" aria-hidden="true" /> Not ready to book?
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Get notified if {routeLabel} drops below {formatPrice(Math.max(20, Math.floor((deal.price * 0.9) / 5) * 5))}.
+                Get notified if {routeLabel} drops below <Price amount={alertTarget} />.
               </p>
               <Button asChild variant="secondary" className="mt-4 w-full">
-                <Link href={`/alerts?from=${deal.origin.code}&to=${deal.destination.code}&max=${Math.max(20, Math.floor((deal.price * 0.9) / 5) * 5)}`}>
+                <Link href={alertHref}>
                   Create price alert
                 </Link>
               </Button>
@@ -346,7 +400,9 @@ export default async function DealPage({ params, searchParams }: PageProps<"/dea
       <div className="fixed inset-x-0 bottom-[calc(61px+env(safe-area-inset-bottom))] z-30 md:bottom-0 border-t bg-card/95 px-4 py-3 shadow-float backdrop-blur-lg lg:hidden">
         <div className="mx-auto flex max-w-xl items-center justify-between gap-3">
           <div>
-            <p className="text-xl font-semibold tabular-nums leading-tight">{formatPrice(deal.price)}</p>
+            <p className="text-xl font-semibold tabular-nums leading-tight">
+              <Price amount={perPerson} />
+            </p>
             <p className="text-xs text-muted-foreground">
               {deal.savingsPercent >= 5 ? `${deal.savingsPercent}% below typical` : "per person"}
             </p>
@@ -358,8 +414,8 @@ export default async function DealPage({ params, searchParams }: PageProps<"/dea
             summary={{
               route: routeLabel,
               dates: formatDateRange(deal.departureDate, deal.returnDate),
-              airline: deal.airline.name,
-              price: formatPrice(deal.price),
+              airline: carriers,
+              priceUsd: perPerson,
               travelers,
               flights,
             }}

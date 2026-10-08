@@ -8,12 +8,21 @@ Built with Next.js 16 (App Router), TypeScript, Tailwind CSS v4, shadcn/ui (Radi
 
 ---
 
+## What makes SkyScout different
+
+| Feature | What it does |
+| --- | --- |
+| **Fare Forecast: buy or wait?** | Every fare gets a verdict (Buy now / Wait / Watch) with a confidence score, the expected price move over the next two weeks and the reasons: price vs typical, where it sits in the route's 90-day history, the recent trend and days to departure. Shown as a chip on each result and as a full panel on the deal page, with a one-tap alert when waiting is the better bet. (`src/lib/insights/forecast.ts`) |
+| **Whole-trip budget** | Flights are compared on what the trip really costs: fare plus estimated daily costs at the destination (budget or comfort style). Explore answers "where can $800 take me for 5 nights?", and every deal page has an adjustable trip-cost card. (`src/lib/insights/trip-cost.ts`, `src/lib/catalog/trip-costs.ts`) |
+| **True price, bags included** | Tell SkyScout your cabin and checked bags once and every fare is re-priced with the estimated fees, so a cheap basic fare can't hide a pricier total. (`src/lib/flights/pricing.ts`) |
+
 ## Features
 
 | Area | What's there |
 | --- | --- |
 | **Homepage** | Hero search, flexible quick searches (Anywhere, This weekend, Next month, Under $300, Direct only), Best deals right now, Cheap flights from your airport, Trending destinations, Weekend escapes, Long-haul bargains |
-| **Search** (`/flights`) | URL-driven state (shareable links), sidebar filters on desktop and a bottom-sheet drawer on mobile: price presets/custom, stops, exact/flexible dates, trip length (weekend, 3–5 days, 1 week, 2 weeks, custom), airlines, departure and arrival time, cabin. Sort by Best / Cheapest / Fastest / Best value; list or grid view; "load more" |
+| **Search** (`/flights`) | From and To can be an airport, a whole country ("United Arab Emirates") or a region ("Europe"). Dates can be exact, ± 3 days, a departure window with length of stay, any time, weekends or next month. Travellers include adults, children and lap infants, and there's cabin class and a display currency. **Additional options** cover sort, stops, results quantity, cabin and checked bags (priced in), max budget, max duration, max layover, departure time, self-transfer connections (include, exclude or only) and airlines. Everything lives in the URL, so searches are shareable. The sidebar or mobile drawer offers price, stops, dates, trip length, bags, connections, duration and layovers, airlines, departure and arrival time and cabin, plus list or grid view |
+| **Currencies** | 16 display currencies (USD, EUR, GBP, QAR, AED, SAR, INR…). Fares stay in USD internally and convert at indicative rates for display (`src/lib/currency.ts`) |
 | **Explore** (`/explore`) | Every destination from an origin, sorted by price, plus a zero-JS SVG "route radar" (compass bearing × flight time). Filters for when, budget and direct only |
 | **Deals** (`/deals`) | Collections: biggest drops, cheapest, weekend, under $300, direct, long-haul |
 | **Deal page** (`/deals/[id]`) | Segment timeline, layovers, baggage and fare rules, interactive price-history chart (keyboard and table accessible), similar flights, save/share, price-alert shortcut, "Search this flight" CTA |
@@ -162,7 +171,7 @@ All inputs are validated with Zod; errors return `{ error, fields? }` with a 4xx
 
 | Method | Path | Notes |
 | --- | --- | --- |
-| GET | `/api/flights` | Same query as `/flights` (`from` required; `to`, `departure`, `return`, `when`, `trip`, `adults`, `children`, `cabin`, `length`, `maxPrice`, `stops`, `airlines`, `dep`, `arr`, `sort`, `limit`) |
+| GET | `/api/flights` | Same query as `/flights`. `from` is required (airport `DOH`, country `AE` or region `europe`). Optional: `to`, `departure`, `return`, `when` (`exact`/`flexible`/`range`/`anytime`/`weekend`/`next-month`), `until` (end of a `range`), `trip=oneway`, `adults`, `children`, `infants`, `cabin`, `length`, `minNights`, `maxNights`, `maxPrice` (USD, incl. bags), `stops`, `airlines`, `dep`, `arr`, `maxDuration` and `maxLayover` (hours), `transfer` (`include`/`exclude`/`only`), `cabinBags`, `checkedBags`, `sort`, `limit` |
 | GET | `/api/flights/[id]` | One deal |
 | GET | `/api/destinations` | `?from=DOH&tag=beach`: catalog plus cheapest fares |
 | GET | `/api/deals` | `?origin=DOH&collection=best\|cheapest\|weekend\|long-haul\|under-300\|direct&limit=12` |
@@ -173,7 +182,13 @@ All inputs are validated with Zod; errors return `{ error, fields? }` with a 4xx
 | DELETE | `/api/favorites/[dealId]` | Remove a saved deal |
 | GET | `/api/cron/alerts` | Scheduled alert checker; requires `Authorization: Bearer $CRON_SECRET` |
 
-Example: `curl "localhost:3000/api/flights?from=DOH&to=BKK&departure=2026-11-12&return=2026-11-19&stops=0&sort=cheapest"`
+Examples:
+
+```bash
+curl "localhost:3000/api/flights?from=DOH&to=BKK&departure=2026-11-12&return=2026-11-19&stops=0&sort=cheapest"
+# Any day in a window, 3–6 nights, UAE airports to anywhere in Europe, with a checked bag, no self-transfer:
+curl "localhost:3000/api/flights?from=AE&to=europe&when=range&departure=2026-10-20&until=2026-11-15&minNights=3&maxNights=6&checkedBags=1&transfer=exclude"
+```
 
 ### Price alerts
 

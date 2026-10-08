@@ -1,6 +1,7 @@
 import { Flame, Sparkles, ThumbsUp, TrendingDown } from "lucide-react";
+import { Price } from "@/components/common/price";
 import type { Airline, DealRating } from "@/lib/flights/types";
-import { formatPrice, RATING_LABELS } from "@/lib/format";
+import { RATING_LABELS } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export function AirlineMark({ airline, size = "md" }: { airline: Pick<Airline, "code" | "name" | "color">; size?: "sm" | "md" | "lg" }) {
@@ -66,7 +67,7 @@ export function PriceBadge({
     <div className={cn("flex flex-col", align === "right" ? "items-end text-right" : "items-start")}>
       {showTypical && (
         <span className="text-xs text-muted-foreground">
-          Typical <span className="line-through">{formatPrice(typicalPrice)}</span>
+          Typical <span className="line-through"><Price amount={typicalPrice} /></span>
         </span>
       )}
       <span
@@ -77,7 +78,7 @@ export function PriceBadge({
           size === "xl" && "text-5xl",
         )}
       >
-        {formatPrice(price)}
+        <Price amount={price} />
       </span>
       {caption && <span className="text-xs text-muted-foreground">{caption}</span>}
     </div>

@@ -1,7 +1,7 @@
 import Link from "next/link";
+import { Price } from "@/components/common/price";
 import { ArrowUpRight } from "lucide-react";
 import type { DestinationInfo } from "@/lib/catalog/destinations";
-import { formatPrice } from "@/lib/format";
 import { DestinationArt } from "./destination-art";
 
 export function DestinationCard({
@@ -40,7 +40,7 @@ export function DestinationCard({
             <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
               {originCity ? `from ${originCity}` : "from"}
             </p>
-            <p className="font-semibold tabular-nums">{formatPrice(fromPrice)}</p>
+            <p className="font-semibold tabular-nums"><Price amount={fromPrice} /></p>
           </div>
         ) : (
           <ArrowUpRight className="size-5 shrink-0" aria-hidden="true" />

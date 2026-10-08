@@ -1,8 +1,9 @@
 "use client";
 
 import { useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
-import { Globe2, MapPin } from "lucide-react";
+import { Globe2, Map as MapIcon, MapPin } from "lucide-react";
 import { AIRPORT_OPTIONS } from "@/lib/catalog/airports";
+import { GROUP_LOCATIONS } from "@/lib/catalog/locations";
 import { cn } from "@/lib/utils";
 import { FieldShell } from "./field-shell";
 
@@ -13,6 +14,8 @@ interface AirportSelectorProps {
   value: string;
   onChange: (code: string) => void;
   allowAnywhere?: boolean;
+  /** Also offer countries and regions (multi-airport searches). */
+  allowGroups?: boolean;
   icon?: ReactNode;
   exclude?: string;
   className?: string;
@@ -24,6 +27,7 @@ interface Option {
   code: string;
   primary: string;
   secondary: string;
+  group?: boolean;
 }
 
 const ANYWHERE_OPTION: Option = { code: ANYWHERE, primary: "Anywhere", secondary: "Discover the cheapest destinations" };
@@ -31,7 +35,8 @@ const ANYWHERE_OPTION: Option = { code: ANYWHERE, primary: "Anywhere", secondary
 function displayValue(code: string): string {
   if (code === ANYWHERE) return "Anywhere";
   const airport = AIRPORT_OPTIONS.find((a) => a.code === code);
-  return airport ? `${airport.city} (${airport.code})` : code;
+  if (airport) return `${airport.city} (${airport.code})`;
+  return GROUP_LOCATIONS.find((g) => g.token === code)?.label ?? code;
 }
 
 /** Accessible airport combobox (WAI-ARIA 1.2 pattern) with type-ahead search. */
@@ -40,6 +45,7 @@ export function AirportSelector({
   value,
   onChange,
   allowAnywhere,
+  allowGroups,
   icon,
   exclude,
   className,
@@ -66,9 +72,21 @@ export function AirportSelector({
       )
       .sort((a, b) => Number(b.code.toLowerCase() === q) - Number(a.code.toLowerCase() === q))
       .map((a) => ({ code: a.code, primary: `${a.city} (${a.code})`, secondary: `${a.name} · ${a.country}` }));
-    const withAnywhere = allowAnywhere && (!q || "anywhere".includes(q)) ? [ANYWHERE_OPTION, ...airports] : airports;
-    return withAnywhere.slice(0, 9);
-  }, [query, allowAnywhere, exclude]);
+    const groups: Option[] = allowGroups
+      ? GROUP_LOCATIONS.filter((g) => g.token !== exclude && (!q || g.label.toLowerCase().includes(q) || g.token.toLowerCase() === q)).map(
+          (g) => ({ code: g.token, primary: g.label, secondary: g.kind === "region" ? `Region · ${g.detail}` : `Country · ${g.detail}`, group: true }),
+        )
+      : [];
+    const anywhere = allowAnywhere && (!q || "anywhere".includes(q)) ? [ANYWHERE_OPTION] : [];
+    // Typing narrows everything; with an empty query show a few regions after the airports.
+    // A query that names a country or region ("united arab", "europe") puts that group first.
+    const leading = groups.filter((g) => g.primary.toLowerCase().startsWith(q));
+    const trailing = groups.filter((g) => !leading.includes(g));
+    const list = q
+      ? [...anywhere, ...leading, ...airports, ...trailing]
+      : [...anywhere, ...airports.slice(0, 7), ...groups.slice(0, 4)];
+    return list.slice(0, 12);
+  }, [query, allowAnywhere, allowGroups, exclude]);
 
   function select(option: Option) {
     onChange(option.code);
@@ -97,7 +115,7 @@ export function AirportSelector({
 
   return (
     <div className={cn("relative", className)}>
-      <FieldShell label={label} htmlFor={id} icon={icon ?? (value === ANYWHERE ? <Globe2 /> : <MapPin />)}>
+      <FieldShell label={label} htmlFor={id} icon={icon ?? (value === ANYWHERE ? <Globe2 /> : value.length !== 3 ? <MapIcon /> : <MapPin />)}>
         <input
           ref={inputRef}
           id={id}
@@ -109,7 +127,7 @@ export function AirportSelector({
           aria-activedescendant={open && options[active] ? `${id}-opt-${options[active].code}` : undefined}
           autoComplete="off"
           spellCheck={false}
-          placeholder="City or airport"
+          placeholder={allowGroups ? "City, airport, country or region" : "City or airport"}
           value={open ? query : displayValue(value)}
           onFocus={(e) => {
             setOpen(true);
@@ -158,10 +176,16 @@ export function AirportSelector({
               <span
                 className={cn(
                   "flex size-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold",
-                  option.code === ANYWHERE ? "bg-sunrise-soft text-sunrise" : "bg-accent text-accent-foreground",
+                  option.code === ANYWHERE || option.group ? "bg-sunrise-soft text-sunrise" : "bg-accent text-accent-foreground",
                 )}
               >
-                {option.code === ANYWHERE ? <Globe2 className="size-4" aria-hidden="true" /> : option.code}
+                {option.code === ANYWHERE ? (
+                  <Globe2 className="size-4" aria-hidden="true" />
+                ) : option.group ? (
+                  <MapIcon className="size-4" aria-hidden="true" />
+                ) : (
+                  option.code
+                )}
               </span>
               <span className="min-w-0">
                 <span className="block truncate text-sm font-semibold">{option.primary}</span>
