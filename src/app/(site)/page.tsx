@@ -87,11 +87,7 @@ export default async function HomePage() {
       <section className="relative overflow-hidden bg-horizon">
         <div className="container-page relative pt-10 pb-12 sm:pt-16 sm:pb-14">
           <div className="max-w-3xl">
-            <p className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-card/70 px-3 py-1 text-xs font-semibold text-primary backdrop-blur">
-              <span className="size-1.5 animate-pulse rounded-full bg-sunrise" aria-hidden="true" />
-              {quotes.length} destinations priced from {airport.city} today
-            </p>
-            <h1 className="mt-5 text-[2.6rem] leading-[1.02] font-semibold tracking-[-0.035em] text-balance sm:text-6xl lg:text-7xl">
+            <h1 className="text-[2.6rem] leading-[1.02] font-semibold tracking-[-0.035em] text-balance sm:text-6xl lg:text-7xl">
               Fly when it&apos;s <span className="font-display font-normal italic text-primary">cheapest</span>.
             </h1>
             <p className="mt-5 max-w-2xl text-lg text-muted-foreground sm:text-xl">
