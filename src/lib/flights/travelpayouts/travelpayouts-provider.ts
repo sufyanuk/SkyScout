@@ -1,4 +1,5 @@
 import "server-only";
+import { AIRLINE_NAMES } from "@/lib/catalog/airline-names";
 import { getAirline } from "@/lib/catalog/airlines";
 import { getAirport } from "@/lib/catalog/airports";
 import { addDays, diffDays, startOfNextMonth, todayIso } from "@/lib/dates";
@@ -105,6 +106,7 @@ export function travelpayoutsConfigured(): boolean {
 export async function fetchTickets(q: TpQuery): Promise<TpTicket[]> {
   const token = process.env.TRAVELPAYOUTS_TOKEN;
   if (!token) throw new TravelpayoutsError("TRAVELPAYOUTS_TOKEN is not set");
+  await loadAirlineDirectory();
   const sp = new URLSearchParams({
     origin: q.origin,
     currency: "usd",
@@ -136,8 +138,48 @@ function airportFor(airportCode: string | undefined, cityCode: string): Airport 
   return getAirport(airportCode) ?? getAirport(cityCode) ?? getAirport(CITY_TO_AIRPORT[cityCode]);
 }
 
+/** Travelpayouts' public airline directory (code → name), loaded once a day. */
+let airlineDirectory: Map<string, { name: string; lowCost: boolean }> | null = null;
+let directoryLoadedAt = 0;
+
+interface TpAirline {
+  code?: string;
+  name?: string | null;
+  is_lowcost?: boolean;
+  name_translations?: { en?: string | null };
+}
+
+export async function loadAirlineDirectory(): Promise<void> {
+  if (airlineDirectory && Date.now() - directoryLoadedAt < 86_400_000) return;
+  try {
+    const base = process.env.TRAVELPAYOUTS_API_BASE || "https://api.travelpayouts.com";
+    const res = await fetch(`${base}/data/en/airlines.json`, {
+      next: { revalidate: 86_400 },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) throw new Error(`airlines.json responded ${res.status}`);
+    const list = (await res.json()) as TpAirline[];
+    const map = new Map<string, { name: string; lowCost: boolean }>();
+    for (const a of list) {
+      const name = a.name_translations?.en || a.name;
+      if (a.code && name) map.set(a.code.toUpperCase(), { name, lowCost: Boolean(a.is_lowcost) });
+    }
+    airlineDirectory = map;
+    directoryLoadedAt = Date.now();
+  } catch (error) {
+    // The built-in AIRLINE_NAMES list covers the common carriers meanwhile.
+    console.warn("[travelpayouts] airline directory unavailable:", error instanceof Error ? error.message : error);
+    airlineDirectory ??= new Map();
+    directoryLoadedAt = Date.now() - 86_400_000 + 600_000; // retry in 10 minutes
+  }
+}
+
 function airlineFor(code: string): Airline {
-  return getAirline(code) ?? { code, name: code, hubs: [], priceFactor: 1, color: "#475569" };
+  const known = getAirline(code);
+  if (known) return known;
+  const listed = airlineDirectory?.get(code);
+  const name = listed?.name ?? AIRLINE_NAMES[code] ?? code;
+  return { code, name, hubs: [], lowCost: listed?.lowCost, priceFactor: 1, color: "#475569" };
 }
 
 /** "2026-11-12T03:15:00+03:00" → "2026-11-12T03:15" (local wall-clock time). */
