@@ -1,6 +1,6 @@
 export const SITE = {
   name: "SkyScout",
-  tagline: "Find flights worth flying for.",
+  tagline: "Fly when it's cheapest.",
   description:
     "SkyScout helps you discover unusually cheap flights and unexpected destinations. Explore fares from your airport, compare deals and get alerts when prices drop.",
   url: (

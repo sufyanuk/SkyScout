@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "SkyScout — Find flights worth flying for.";
+export const alt = "SkyScout — Fly when it's cheapest.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -27,7 +27,7 @@ export default function OpengraphImage() {
           <div style={{ fontSize: 40, fontWeight: 700 }}>SkyScout</div>
         </div>
         <div style={{ display: "flex", flexDirection: "column" }}>
-          <div style={{ fontSize: 88, fontWeight: 700, letterSpacing: -3, lineHeight: 1 }}>Find flights worth flying for.</div>
+          <div style={{ fontSize: 88, fontWeight: 700, letterSpacing: -3, lineHeight: 1 }}>{"Fly when it's cheapest."}</div>
           <div style={{ fontSize: 34, color: "#5d6679", marginTop: 24 }}>Unusually cheap fares and unexpected destinations from your airport.</div>
         </div>
       </div>

@@ -92,11 +92,11 @@ export default async function HomePage() {
               {quotes.length} destinations priced from {airport.city} today
             </p>
             <h1 className="mt-5 text-[2.6rem] leading-[1.02] font-semibold tracking-[-0.035em] text-balance sm:text-6xl lg:text-7xl">
-              Find flights <span className="font-display font-normal italic text-primary">worth</span> flying for.
+              Fly when it&apos;s <span className="font-display font-normal italic text-primary">cheapest</span>.
             </h1>
             <p className="mt-5 max-w-2xl text-lg text-muted-foreground sm:text-xl">
-              Find the <strong className="font-semibold text-foreground">cheapest days to fly</strong> to your
-              destination — anywhere within your <strong className="font-semibold text-foreground">travel window</strong>.
+              Tell us your <strong className="font-semibold text-foreground">travel window</strong> and destination —
+              we&apos;ll find the <strong className="font-semibold text-foreground">best-value days</strong> to go.
             </p>
           </div>
 
