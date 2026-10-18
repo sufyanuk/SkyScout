@@ -143,10 +143,6 @@ export function SearchBox({ initial, today, variant = "hero", keep, onSubmitted,
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (v.minNights && v.maxNights && v.minNights > v.maxNights) {
-      toast.error("Minimum stay is longer than the maximum");
-      return;
-    }
     if (v.to === v.from) {
       toast.error("Origin and destination are the same", { description: "Pick another destination or try “Anywhere”." });
       return;
@@ -403,31 +399,19 @@ export function SearchBox({ initial, today, variant = "hero", keep, onSubmitted,
               placeholder="Any"
               max={48}
             />
-            <div className="col-span-2 space-y-1.5 lg:col-span-1">
-              <OptionLabel
-                label="Length of stay (nights)"
-                hint="For return trips: how many nights you want at the destination. Leave empty for any length."
-              />
-              <div className="flex items-center gap-2">
-                <NumberInput
-                  ariaLabel="Minimum nights"
-                  value={v.minNights ? String(v.minNights) : ""}
-                  onChange={(t) => update({ minNights: numOrNull(t) })}
-                  placeholder={v.oneWay ? "One-way" : "Min"}
-                  disabled={v.oneWay}
-                  max={30}
-                />
-                <span className="text-muted-foreground">–</span>
-                <NumberInput
-                  ariaLabel="Maximum nights"
-                  value={v.maxNights ? String(v.maxNights) : ""}
-                  onChange={(t) => update({ maxNights: numOrNull(t) })}
-                  placeholder={v.oneWay ? "One-way" : "Max"}
-                  disabled={v.oneWay}
-                  max={30}
-                />
-              </div>
-            </div>
+            <NumberField
+              label="Length of stay"
+              hint="For return trips: how many nights you'll spend at the destination. Leave empty for any length."
+              suffix="Nights"
+              value={v.oneWay || !v.minNights ? "" : String(v.minNights)}
+              onChange={(t) => {
+                const nights = numOrNull(t);
+                update({ minNights: nights, maxNights: nights });
+              }}
+              placeholder={v.oneWay ? "One-way" : "Any"}
+              disabled={v.oneWay}
+              max={30}
+            />
             <AirlinePicker value={v.airlines} onChange={(airlines) => update({ airlines })} />
           </div>
         )}
@@ -535,6 +519,7 @@ function NumberField(props: {
   prefix?: string;
   suffix?: string;
   max?: number;
+  disabled?: boolean;
 }) {
   return (
     <div className="space-y-1.5">
