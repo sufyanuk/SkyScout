@@ -226,6 +226,12 @@ export default async function FlightsPage({ searchParams }: PageProps<"/flights"
             </div>
           </div>
 
+          {deals[0]?.provider === "travelpayouts" && (
+            <p className="mb-4 rounded-2xl bg-muted px-4 py-2.5 text-sm text-muted-foreground">
+              Real fares found recently on Aviasales. Prices can change before you book; baggage and fare rules are
+              shown on the booking site.
+            </p>
+          )}
           <PendingResults>
             {deals.length === 0 ? (
               <EmptyState

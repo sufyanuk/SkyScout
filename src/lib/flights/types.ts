@@ -151,6 +151,10 @@ export interface FlightDeal {
   bagFee: number;
   /** Great-circle distance between origin and destination, km. */
   distanceKm: number;
+  /** Partner page where this fare can be booked (live providers only). */
+  bookingUrl?: string;
+  /** When the provider last saw this price (live cached-price providers), ISO timestamp. */
+  foundAt?: string;
 }
 
 export interface FlightSearchParams {

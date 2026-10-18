@@ -125,6 +125,7 @@ src/
       filtering.ts       Shared filter/sort/facet logic
       mock/              MockFlightProvider + deterministic generator
       real-provider.ts   RealFlightProvider placeholder
+      travelpayouts/     TravelpayoutsProvider (Aviasales Data API)
     catalog/             Airports, airlines, destination guides (static reference data)
     services/            Favourites, alerts, searches/price history, notifications
     search-params.ts     URL ⇄ search state (Zod)
@@ -137,8 +138,9 @@ src/
 
 ```
 FlightSearchProvider (src/lib/flights/provider.ts)
-├── MockFlightProvider   (default, no credentials)
-└── RealFlightProvider   (placeholder for Amadeus / Duffel / Kiwi / …)
+├── MockFlightProvider          (default, no credentials)
+├── TravelpayoutsProvider       (real cached fares from the Aviasales Data API)
+└── RealFlightProvider          (placeholder for Amadeus / Duffel / Kiwi / …)
 ```
 
 Everything in the UI and API goes through `getFlightProvider()`, which returns an object implementing:
@@ -154,7 +156,25 @@ getSimilarDeals(deal)
 
 **How the mock works:** a deal id such as `DOH-BKK-20261112-20261119-TG-1E` encodes the route, dates, airline, variant and cabin. The generator seeds a PRNG from that id to produce the same schedule, price, baggage and fare rules every time, so detail pages, favourites and alerts stay consistent without storing anything. Prices come from great-circle distance, region, seasonality, cabin, airline positioning, stops and booking lead time. Routings come from real hub structures: direct where an airline hubs at either end, one-stop via the carrier's hub, and occasional cheaper two-stop options on long-haul routes.
 
-### Connecting a real flight API
+### Travelpayouts (Aviasales) — real fares
+
+SkyScout can show real fares from the [Travelpayouts](https://www.travelpayouts.com) Data API. These are prices Aviasales users found in the last few days, which suits a deals site. They aren't a live seat search, and the UI says so.
+
+1. Create a Travelpayouts account and join the Aviasales program. Copy your **API token** and your **marker** (partner ID) from your Travelpayouts profile.
+2. Set the environment variables (in Vercel: Project → Settings → Environment Variables):
+   - `FLIGHT_PROVIDER=travelpayouts`
+   - `TRAVELPAYOUTS_TOKEN=<your API token>` (server-only, never sent to the browser)
+   - `TRAVELPAYOUTS_MARKER=<your marker>` (added to "Book on Aviasales" links so bookings are credited to you)
+3. Redeploy, then open `/api/travelpayouts/test?from=DOH&to=BKK`. `"ok": true` with sample fares means the connection works.
+
+How it behaves:
+- Searches, deal pages, Explore and deal feeds use real fares. Deal pages link to Aviasales with your marker (`rel="sponsored"`).
+- Deal ids look like `TP-DOH-BKK-20261112-20261119-QR-0-342`. Opening one re-checks the current fare for that flight.
+- The Data API doesn't cover premium cabins, baggage, fare rules, connection airports or price history. Premium-cabin searches and price charts / Fare Forecast use the demo model, and baggage and fare rules are shown on the booking site.
+- If the API errors (bad token, rate limit, outage), SkyScout logs a warning and falls back to demo data, so pages never break.
+- Responses are cached for 30 minutes to stay within rate limits.
+
+### Connecting another flight API
 
 1. Implement the methods in `src/lib/flights/real-provider.ts`, mapping the API's offers into the types in `src/lib/flights/types.ts`. Prices are per traveller; times are local wall-clock strings. Supply `typicalPrice` so savings can be computed, for example from `PriceHistory`.
 2. Add `FLIGHT_API_BASE_URL`, `FLIGHT_API_KEY` and `FLIGHT_API_SECRET` to the environment. These are read only on the server and never sent to the browser.
@@ -226,7 +246,7 @@ Behind a proxy, Auth.js trusts the forwarded host (`trustHost: true`). Set `NEXT
 
 ### Environment variables
 
-See [`.env.example`](.env.example). Required: `DATABASE_URL`, `AUTH_SECRET`. Recommended: `NEXT_PUBLIC_SITE_URL`. Optional: `AUTH_GOOGLE_*`, `AUTH_GITHUB_*`, `FLIGHT_PROVIDER`, `FLIGHT_API_*`, `CRON_SECRET`.
+See [`.env.example`](.env.example). Required: `DATABASE_URL`, `AUTH_SECRET`. Recommended: `NEXT_PUBLIC_SITE_URL`. Optional: `AUTH_GOOGLE_*`, `AUTH_GITHUB_*`, `FLIGHT_PROVIDER`, `TRAVELPAYOUTS_TOKEN`, `TRAVELPAYOUTS_MARKER`, `FLIGHT_API_*`, `CRON_SECRET`.
 
 ---
 

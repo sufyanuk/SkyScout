@@ -25,17 +25,19 @@ interface BookDialogProps {
     flights: string[];
   };
   provider: string;
+  /** Partner booking page (live providers). When set, the button links straight there. */
+  bookingUrl?: string;
   label?: string;
   size?: "default" | "lg" | "xl";
   className?: string;
 }
 
 /**
- * "Search this flight" CTA. The mock provider has no booking partner, so this
- * explains what would happen and lets the traveller copy the itinerary rather
- * than sending them to a fake URL.
+ * "Search this flight" CTA. Live fares with a partner link go straight to the
+ * booking site; demo fares have no booking partner, so this explains that and
+ * lets the traveller copy the itinerary rather than sending them to a fake URL.
  */
-export function BookDialog({ summary, provider, label = "Search this flight", size = "xl", className }: BookDialogProps) {
+export function BookDialog({ summary, provider, bookingUrl, label = "Search this flight", size = "xl", className }: BookDialogProps) {
   const [open, setOpen] = useState(false);
   const { format } = useCurrency();
   const price = format(summary.priceUsd);
@@ -52,6 +54,16 @@ export function BookDialog({ summary, provider, label = "Search this flight", si
     } catch {
       toast.error("Couldn't access the clipboard");
     }
+  }
+
+  if (bookingUrl) {
+    return (
+      <Button asChild size={size} variant="sunrise" className={className}>
+        <a href={bookingUrl} target="_blank" rel="sponsored noopener noreferrer">
+          Book on Aviasales <ExternalLink className="size-5" aria-hidden="true" />
+        </a>
+      </Button>
+    );
   }
 
   return (

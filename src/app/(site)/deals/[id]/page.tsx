@@ -232,6 +232,13 @@ export default async function DealPage({ params, searchParams }: PageProps<"/dea
             <h2 id="fare" className="text-xl font-semibold tracking-tight">
               Baggage &amp; fare details
             </h2>
+            {deal.provider === "travelpayouts" ? (
+              <p className="mt-4 text-sm text-muted-foreground">
+                This fare comes from Aviasales price data, which doesn&apos;t include baggage allowance or change and
+                refund rules. You&apos;ll see them on the booking site before you pay.
+              </p>
+            ) : (
+              <>
             <ul className="mt-5 grid gap-3 sm:grid-cols-2">
               <FareItem icon={Briefcase} ok={deal.baggage.personalItem} title="Personal item" text="Small bag that fits under the seat" />
               <FareItem
@@ -268,6 +275,8 @@ export default async function DealPage({ params, searchParams }: PageProps<"/dea
             <p className="mt-4 text-xs text-muted-foreground">
               Fare rules are indicative. Always confirm baggage and change conditions with the airline before booking.
             </p>
+              </>
+            )}
           </section>
 
           {/* Price history */}
@@ -341,6 +350,7 @@ export default async function DealPage({ params, searchParams }: PageProps<"/dea
               <BookDialog
                 className="mt-6 w-full"
                 provider={deal.provider}
+                bookingUrl={deal.bookingUrl}
                 summary={{
                   route: routeLabel,
                   dates: formatDateRange(deal.departureDate, deal.returnDate),
@@ -350,6 +360,12 @@ export default async function DealPage({ params, searchParams }: PageProps<"/dea
                   flights,
                 }}
               />
+              {deal.bookingUrl && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Fare recently found on Aviasales. Prices change often; the final price, baggage and fare rules are
+                  confirmed on the booking site.
+                </p>
+              )}
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <FavoriteButton dealId={deal.id} label={`${routeLabel} deal`} withText className="w-full" />
                 <ShareButton
@@ -411,6 +427,7 @@ export default async function DealPage({ params, searchParams }: PageProps<"/dea
             size="default"
             label="Search flight"
             provider={deal.provider}
+            bookingUrl={deal.bookingUrl}
             summary={{
               route: routeLabel,
               dates: formatDateRange(deal.departureDate, deal.returnDate),

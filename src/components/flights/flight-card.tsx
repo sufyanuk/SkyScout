@@ -73,11 +73,13 @@ export function FlightCard({ deal, party, linkQuery, showDestination, forecast }
         )}
         <p className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
           <Luggage className="size-3.5" aria-hidden="true" />
-          {deal.baggage.checkedBags > 0
-            ? `${deal.baggage.checkedBags}× ${deal.baggage.checkedKg}kg checked bag included`
-            : deal.baggage.cabinKg > 0
-              ? `Cabin bag ${deal.baggage.cabinKg}kg · no checked bag`
-              : "Personal item only"}
+          {deal.provider === "travelpayouts"
+            ? "Baggage and fare rules shown on the booking site"
+            : deal.baggage.checkedBags > 0
+              ? `${deal.baggage.checkedBags}× ${deal.baggage.checkedKg}kg checked bag included`
+              : deal.baggage.cabinKg > 0
+                ? `Cabin bag ${deal.baggage.cabinKg}kg · no checked bag`
+                : "Personal item only"}
           {deal.bagFee > 0 && (
             <span className="font-medium text-foreground">
               · +<Price amount={deal.bagFee} /> for your bags (included in price)

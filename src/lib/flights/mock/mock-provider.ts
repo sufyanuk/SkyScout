@@ -125,7 +125,7 @@ function reachableDestinations(origin: string): string[] {
   return AIRPORTS.filter((a) => a.code !== origin && routeOptions(origin, a.code).length > 0).map((a) => a.code);
 }
 
-const COLLECTIONS: Record<
+export const COLLECTIONS: Record<
   DealCollection,
   { filter: (d: FlightDeal) => boolean; compare: (a: FlightDeal, b: FlightDeal) => number }
 > = {
@@ -141,7 +141,7 @@ const COLLECTIONS: Record<
   direct: { filter: (d) => d.outbound.stops === 0, compare: (a, b) => b.savingsPercent - a.savingsPercent },
 };
 
-function bestPerDestination(deals: FlightDeal[], compare: (a: FlightDeal, b: FlightDeal) => number) {
+export function bestPerDestination(deals: FlightDeal[], compare: (a: FlightDeal, b: FlightDeal) => number) {
   return capPerDestination([...deals].sort(compare), 1);
 }
 
