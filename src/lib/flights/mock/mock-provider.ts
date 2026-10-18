@@ -80,7 +80,7 @@ export function datePairs(params: FlightSearchParams, today: IsoDate): DatePair[
     case "range": {
       // Depart any day inside a window; sample it evenly and try a few stay lengths.
       const start = params.departure ?? addDays(today, 7);
-      let end = params.departureEnd && params.departureEnd > start ? params.departureEnd : addDays(start, 30);
+      let end = params.departureEnd && params.departureEnd >= start ? params.departureEnd : addDays(start, 30);
       if (diffDays(start, end) > MAX_RANGE_DAYS) end = addDays(start, MAX_RANGE_DAYS);
       const span = diffDays(start, end);
       const offsets = spread(0, span, Math.min(span + 1, 10));

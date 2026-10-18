@@ -16,11 +16,10 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { locationLabel } from "@/lib/catalog/locations";
 import { totalPrice } from "@/lib/flights/filtering";
 import { isSingleRoute } from "@/lib/flights/params";
-import { forecastFare, type FareForecast } from "@/lib/insights/forecast";
 import { addDays, todayIso } from "@/lib/dates";
 import { getFlightProvider } from "@/lib/flights";
 import type { FlightSearchParams } from "@/lib/flights/types";
-import { CABIN_LABELS, formatDateRange } from "@/lib/format";
+import { CABIN_LABELS, formatDate, formatDateRange } from "@/lib/format";
 import { PAGE_SIZE, parseSearchPage } from "@/lib/search-params";
 import { getHomeAirport } from "@/lib/services/preferences";
 import { recordPriceObservations, recordSearch } from "@/lib/services/searches";
@@ -47,7 +46,8 @@ function whenLabel(params: FlightSearchParams) {
           ? ""
           : `, ${params.minNights ?? 1}–${params.maxNights ?? params.minNights ?? 30} nights`;
       if (!params.departure) return "Flexible dates";
-      const leave = `Leave ${formatDateRange(params.departure, params.departureEnd ?? params.departure)}`;
+      const end = params.departureEnd ?? params.departure;
+      const leave = end === params.departure ? `Departing ${formatDate(params.departure)}` : `Leave ${formatDateRange(params.departure, end)}`;
       const back =
         !params.oneWay && params.returnFrom && params.returnUntil
           ? ` · return ${formatDateRange(params.returnFrom, params.returnUntil)}`
@@ -59,19 +59,10 @@ function whenLabel(params: FlightSearchParams) {
   }
 }
 
-/** Date windows for the search box; single dates become one-day ranges. */
+/** Departure date for the search box (the first day of any date window). */
 function searchWindows(params: FlightSearchParams) {
-  const flex = params.when === "flexible" ? 3 : 0;
-  if (params.when === "range" || ((params.when === "exact" || params.when === "flexible") && params.departure)) {
-    const dep = params.departure!;
-    return {
-      departure: params.when === "range" ? dep : addDays(dep, -flex),
-      until: params.when === "range" ? (params.departureEnd ?? dep) : addDays(dep, flex),
-      returnFrom: params.returnFrom ?? (params.returnDate ? addDays(params.returnDate, -flex) : undefined),
-      returnUntil: params.returnUntil ?? (params.returnDate ? addDays(params.returnDate, flex) : undefined),
-    };
-  }
-  return {};
+  if (!params.departure) return {};
+  return { departure: params.when === "flexible" ? addDays(params.departure, -3) : params.departure };
 }
 
 function toQuery(sp: SearchParams): string {
@@ -109,17 +100,6 @@ export default async function FlightsPage({ searchParams }: PageProps<"/flights"
   const travelers = party.seated + party.infants;
   const cheapest = deals.reduce<number | null>((m, d) => (m === null || totalPrice(d) < m ? totalPrice(d) : m), null);
   const multiDestination = !isSingleRoute(params);
-  const today = todayIso();
-
-  // Fare Forecast for every visible fare (one price-history lookup per route).
-  const provider = getFlightProvider();
-  const histories = new Map<string, Awaited<ReturnType<typeof provider.getPriceHistory>>>();
-  const forecasts = new Map<string, FareForecast>();
-  for (const deal of visible) {
-    const key = `${deal.origin.code}-${deal.destination.code}-${deal.cabin}`;
-    if (!histories.has(key)) histories.set(key, await provider.getPriceHistory(deal.origin.code, deal.destination.code, deal.cabin, 90));
-    forecasts.set(deal.id, forecastFare(deal, histories.get(key)!, today));
-  }
 
   // Carried to deal pages so totals and bag fees match.
   const linkParams = new URLSearchParams();
@@ -264,7 +244,6 @@ export default async function FlightsPage({ searchParams }: PageProps<"/flights"
                     party={party}
                     linkQuery={linkQuery}
                     showDestination={multiDestination}
-                    forecast={forecasts.get(deal.id)}
                   />
                 ))}
               </div>

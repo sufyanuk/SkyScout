@@ -8,7 +8,6 @@ import {
   ChevronDown,
   Coins,
   Loader2,
-  MoonStar,
   PlaneLanding,
   PlaneTakeoff,
   Search,
@@ -29,18 +28,14 @@ import { CABIN_LABELS } from "@/lib/format";
 import { buildSearchHref } from "@/lib/search-params";
 import { cn } from "@/lib/utils";
 import { AirportSelector, ANYWHERE } from "./airport-selector";
-import { DateRangePicker, type DateRange } from "./date-range-picker";
+import { DateRangePicker } from "./date-range-picker";
 import { TravelerSelector } from "./traveler-selector";
 
 export interface SearchBoxValues {
   from: string;
   to: string;
-  /** Departure window (YYYY-MM-DD). */
+  /** Departure date (YYYY-MM-DD). Return trips use the length of stay. */
   departure: string;
-  until: string;
-  /** Return window (YYYY-MM-DD); ignored for one-way trips. */
-  returnFrom: string;
-  returnUntil: string;
   oneWay: boolean;
   adults: number;
   children: number;
@@ -78,7 +73,7 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: "value", label: "Biggest saving" },
 ];
 
-const DEFAULTS: Omit<SearchBoxValues, "from" | "departure" | "until" | "returnFrom" | "returnUntil"> = {
+const DEFAULTS: Omit<SearchBoxValues, "from" | "departure"> = {
   to: ANYWHERE,
   oneWay: false,
   adults: 1,
@@ -97,27 +92,11 @@ const DEFAULTS: Omit<SearchBoxValues, "from" | "departure" | "until" | "returnFr
   airlines: [],
 };
 
-/** A return window that fits a departure window: a couple of days after it starts to two weeks after it ends. */
-function defaultReturn(departure: DateRange): DateRange {
-  return { start: addDays(departure.start, 2), end: addDays(departure.end, 14) };
-}
-
 function initialValues(initial: SearchBoxProps["initial"], today: string): SearchBoxValues {
-  const departure =
-    initial.departure && initial.departure > today
-      ? { start: initial.departure, end: initial.until && initial.until >= initial.departure ? initial.until : initial.departure }
-      : { start: addDays(today, 1), end: addDays(today, 30) };
-  const ret =
-    initial.returnFrom && initial.returnUntil && initial.returnUntil >= initial.returnFrom && initial.returnUntil > departure.start
-      ? { start: initial.returnFrom, end: initial.returnUntil }
-      : defaultReturn(departure);
   return {
     ...DEFAULTS,
     ...initial,
-    departure: departure.start,
-    until: departure.end,
-    returnFrom: ret.start,
-    returnUntil: ret.end,
+    departure: initial.departure && initial.departure > today ? initial.departure : addDays(today, 14),
   };
 }
 
@@ -129,6 +108,7 @@ function advancedCount(v: SearchBoxValues) {
     v.limit !== DEFAULTS.limit,
     v.maxPriceUsd !== null,
     v.maxLayover !== null,
+    v.minNights !== null || v.maxNights !== null,
     v.dep !== "any",
     v.transfer !== "include",
     v.airlines.length > 0,
@@ -154,13 +134,6 @@ export function SearchBox({ initial, today, variant = "hero", keep, onSubmitted,
   const minDate = addDays(today, 1);
   const moreCount = advancedCount(v);
 
-  function changeDeparture(range: DateRange) {
-    // Keep the return window valid: it must end after the first possible departure.
-    const keepReturn = v.returnUntil > range.start;
-    const ret = keepReturn ? { start: v.returnFrom, end: v.returnUntil } : defaultReturn(range);
-    update({ departure: range.start, until: range.end, returnFrom: ret.start, returnUntil: ret.end });
-  }
-
   function changeCurrency(code: string) {
     startCurrency(async () => {
       await setCurrency(code);
@@ -170,10 +143,6 @@ export function SearchBox({ initial, today, variant = "hero", keep, onSubmitted,
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!v.oneWay && v.returnUntil <= v.departure) {
-      toast.error("Return dates must be after departure", { description: "Pick a return range that ends after you leave." });
-      return;
-    }
     if (v.minNights && v.maxNights && v.minNights > v.maxNights) {
       toast.error("Minimum stay is longer than the maximum");
       return;
@@ -195,9 +164,7 @@ export function SearchBox({ initial, today, variant = "hero", keep, onSubmitted,
       cabin: v.cabin,
       extra: {
         ...keep,
-        until: v.until,
-        returnFrom: v.oneWay ? null : v.returnFrom,
-        returnUntil: v.oneWay ? null : v.returnUntil,
+        until: v.departure,
         minNights: v.oneWay ? null : v.minNights,
         maxNights: v.oneWay ? null : v.maxNights,
         sort: v.sort !== "best" ? v.sort : null,
@@ -282,44 +249,25 @@ export function SearchBox({ initial, today, variant = "hero", keep, onSubmitted,
             <ArrowLeftRight className="size-4" aria-hidden="true" />
           </button>
         </div>
-        <div className="grid gap-2 sm:grid-cols-2 lg:col-span-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:col-span-2">
           <DateRangePicker
-            label="Departure date range"
-            title="Departure Date Range"
-            subtitle="select range of dates to leave"
-            value={{ start: v.departure, end: v.until }}
-            onChange={changeDeparture}
+            single
+            label="Departure date"
+            title="Departure date"
+            value={{ start: v.departure, end: v.departure }}
+            onChange={(r) => update({ departure: r.start })}
             min={minDate}
             today={today}
           />
-          <DateRangePicker
-            label="Return date range"
-            title="Return Date Range"
-            subtitle="select range of dates to come back"
-            value={{ start: v.returnFrom, end: v.returnUntil }}
-            onChange={(r) => update({ returnFrom: r.start, returnUntil: r.end })}
-            min={addDays(v.departure, 1)}
-            today={today}
-            disabled={v.oneWay}
-            disabledLabel="One-way"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 lg:col-span-4 lg:grid-cols-[1.2fr_1.1fr_1fr_1fr_auto]">
           <TravelerSelector
             adults={v.adults}
             childCount={v.children}
             infants={v.infants}
             onChange={(t) => update(t)}
-            className="col-span-2 lg:col-span-1"
           />
-          <StayField
-            min={v.minNights}
-            max={v.maxNights}
-            onChange={(patch) => update(patch)}
-            disabled={v.oneWay}
-            className="col-span-2 lg:col-span-1"
-          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 lg:col-span-4 lg:grid-cols-[1fr_1fr_auto]">
           <Select value={v.cabin} onValueChange={(cabin) => update({ cabin: cabin as Cabin })}>
             <SelectTrigger aria-label="Cabin class" className="h-auto min-h-[60px] rounded-2xl px-4 [&>span]:flex [&>span]:items-center">
               <span className="flex items-center gap-3">
@@ -455,73 +403,36 @@ export function SearchBox({ initial, today, variant = "hero", keep, onSubmitted,
               placeholder="Any"
               max={48}
             />
+            <div className="col-span-2 space-y-1.5 lg:col-span-1">
+              <OptionLabel
+                label="Length of stay (nights)"
+                hint="For return trips: how many nights you want at the destination. Leave empty for any length."
+              />
+              <div className="flex items-center gap-2">
+                <NumberInput
+                  ariaLabel="Minimum nights"
+                  value={v.minNights ? String(v.minNights) : ""}
+                  onChange={(t) => update({ minNights: numOrNull(t) })}
+                  placeholder={v.oneWay ? "One-way" : "Min"}
+                  disabled={v.oneWay}
+                  max={30}
+                />
+                <span className="text-muted-foreground">–</span>
+                <NumberInput
+                  ariaLabel="Maximum nights"
+                  value={v.maxNights ? String(v.maxNights) : ""}
+                  onChange={(t) => update({ maxNights: numOrNull(t) })}
+                  placeholder={v.oneWay ? "One-way" : "Max"}
+                  disabled={v.oneWay}
+                  max={30}
+                />
+              </div>
+            </div>
             <AirlinePicker value={v.airlines} onChange={(airlines) => update({ airlines })} />
           </div>
         )}
       </div>
     </form>
-  );
-}
-
-/** Min–max nights, styled like the other main search fields. */
-function StayField({
-  min,
-  max,
-  onChange,
-  disabled,
-  className,
-}: {
-  min: number | null;
-  max: number | null;
-  onChange: (patch: { minNights?: number | null; maxNights?: number | null }) => void;
-  disabled?: boolean;
-  className?: string;
-}) {
-  const input =
-    "w-14 min-w-0 rounded-lg border border-input bg-card px-1.5 py-1 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none text-center text-[15px] font-semibold tabular-nums outline-none placeholder:font-normal placeholder:text-muted-foreground/70 focus:border-ring focus:ring-[3px] focus:ring-ring/15 disabled:bg-transparent";
-  return (
-    <div
-      className={cn(
-        "flex min-h-[60px] items-center gap-3 rounded-2xl border border-input bg-card px-4",
-        disabled && "bg-muted/60",
-        className,
-      )}
-    >
-      <MoonStar className="size-[18px] shrink-0 text-muted-foreground" aria-hidden="true" />
-      <div className="flex min-w-0 flex-col py-1.5">
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Length of stay</span>
-        {disabled ? (
-          <span className="text-[15px] text-muted-foreground">One-way</span>
-        ) : (
-          <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <input
-              type="number"
-              inputMode="numeric"
-              min={1}
-              max={30}
-              aria-label="Minimum nights"
-              placeholder="Min"
-              value={min ?? ""}
-              onChange={(e) => onChange({ minNights: numOrNull(e.target.value) })}
-              className={input}
-            />
-            –
-            <input
-              type="number"
-              inputMode="numeric"
-              min={1}
-              max={30}
-              aria-label="Maximum nights"
-              placeholder="Max"
-              value={max ?? ""}
-              onChange={(e) => onChange({ maxNights: numOrNull(e.target.value) })}
-              className={input}
-            />
-            nights
-          </span>
-        )}
-      </div>
-    </div>
   );
 }
 

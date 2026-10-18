@@ -12,7 +12,6 @@ Built with Next.js 16 (App Router), TypeScript, Tailwind CSS v4, shadcn/ui (Radi
 
 | Feature | What it does |
 | --- | --- |
-| **Fare Forecast: buy or wait?** | Every fare gets a verdict (Buy now / Wait / Watch) with a confidence score, the expected price move over the next two weeks and the reasons: price vs typical, where it sits in the route's 90-day history, the recent trend and days to departure. Shown as a chip on each result and as a full panel on the deal page, with a one-tap alert when waiting is the better bet. (`src/lib/insights/forecast.ts`) |
 | **Whole-trip budget** | Flights are compared on what the trip really costs: fare plus estimated daily costs at the destination (budget or comfort style). Explore answers "where can $800 take me for 5 nights?", and every deal page has an adjustable trip-cost card. (`src/lib/insights/trip-cost.ts`, `src/lib/catalog/trip-costs.ts`) |
 | **True price, bags included** | Tell SkyScout your cabin and checked bags once and every fare is re-priced with the estimated fees, so a cheap basic fare can't hide a pricier total. (`src/lib/flights/pricing.ts`) |
 
@@ -20,10 +19,10 @@ Built with Next.js 16 (App Router), TypeScript, Tailwind CSS v4, shadcn/ui (Radi
 
 | Area | What's there |
 | --- | --- |
-| **Homepage** | Hero search with departure and return **date ranges** (presets: This Weekend, Next 7/30/60/90/180 days, or a custom range on a two-month calendar) and length of stay, cheap flights from your airport, the “Only on SkyScout” features, price alerts |
-| **Search** (`/flights`) | From and To can be an airport, a whole country ("United Arab Emirates") or a region ("Europe"). Departure and return are date ranges, with an optional length of stay. Travellers include adults, children and lap infants, and there's cabin class and a display currency. **Additional options** cover sort, stops, results quantity, max budget, max layover, departure time, self-transfer connections (include, exclude or only) and airlines. Everything lives in the URL, so searches are shareable. Results can be sorted and shown as a list or grid |
+| **Homepage** | Hero search with a single departure date (length of stay is under Additional options), cheap flights from your airport, whole-trip budget examples, price alerts |
+| **Search** (`/flights`) | From and To can be an airport, a whole country ("United Arab Emirates") or a region ("Europe"). Pick one departure date; for return trips, set the length of stay (min–max nights) under Additional options. Travellers include adults, children and lap infants, and there's cabin class and a display currency. **Additional options** cover sort, stops, results quantity, max budget, max layover, departure time, self-transfer connections (include, exclude or only) and airlines. Everything lives in the URL, so searches are shareable. Results can be sorted and shown as a list or grid |
 | **Currencies** | 16 display currencies (USD, EUR, GBP, QAR, AED, SAR, INR…). Fares stay in USD internally and convert at indicative rates for display (`src/lib/currency.ts`) |
-| **Explore** (`/explore`) | Every destination from an origin, sorted by price, plus a zero-JS SVG "route radar" (compass bearing × flight time). Filters for when, budget and direct only |
+| **Explore** (`/explore`) | Every destination from an origin, sorted by price, plus a zero-JS SVG world map with great-circle routes and price-coloured dots. Filters for when, budget and direct only |
 | **Deals** (`/deals`) | Collections: biggest drops, cheapest, weekend, under $300, direct, long-haul |
 | **Deal page** (`/deals/[id]`) | Segment timeline, layovers, baggage and fare rules, interactive price-history chart (keyboard and table accessible), similar flights, save/share, price-alert shortcut, "Search this flight" CTA |
 | **Destinations** (`/destinations/[slug]`) | Hero, cheapest flights, average price, fastest flight, best time to visit, popular airlines, example itineraries, travel info, JSON-LD |
@@ -170,7 +169,7 @@ SkyScout can show real fares from the [Travelpayouts](https://www.travelpayouts.
 How it behaves:
 - Searches, deal pages, Explore and deal feeds use real fares. Deal pages link to Aviasales with your marker (`rel="sponsored"`).
 - Deal ids look like `TP-DOH-BKK-20261112-20261119-QR-0-342`. Opening one re-checks the current fare for that flight.
-- The Data API doesn't cover premium cabins, baggage, fare rules, connection airports or price history. Premium-cabin searches and price charts / Fare Forecast use the demo model, and baggage and fare rules are shown on the booking site.
+- The Data API doesn't cover premium cabins, baggage, fare rules, connection airports or price history. Premium-cabin searches and price charts use the demo model, and baggage and fare rules are shown on the booking site.
 - If the API errors (bad token, rate limit, outage), SkyScout logs a warning and falls back to demo data, so pages never break.
 - Responses are cached for 30 minutes to stay within rate limits.
 
@@ -255,7 +254,7 @@ See [`.env.example`](.env.example). Required: `DATABASE_URL`, `AUTH_SECRET`. Rec
 - An original visual identity: "night flight" ink, scout blue for actions, sunrise coral for deal highlights and green for savings. Type is Geist with Instrument Serif italic accents.
 - Destination artwork consists of generated SVG illustrations (gradient sky plus a skyline, mountain, island, desert or old-town motif), so there are no stock photos or third-party assets. Add photography later via the destination catalog.
 - Airlines appear as neutral monograms, never logos.
-- Server Components by default. Client JavaScript is limited to interactive islands such as the search box, filters, favourite and share buttons, dialogs and the chart. The explore radar is pure SVG with links.
+- Server Components by default. Client JavaScript is limited to interactive islands such as the search box, filters, favourite and share buttons, dialogs and the chart. The explore world map is pure SVG with links.
 
 ## Disclaimer
 

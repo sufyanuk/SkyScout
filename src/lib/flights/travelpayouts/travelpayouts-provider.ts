@@ -42,7 +42,7 @@ import { distanceKm } from "@/lib/geo";
  *  - Economy only → other cabins use the demo provider.
  *  - No baggage or fare rules → shown as "check with the airline".
  *  - No connection airports → stops are counted, not itemised.
- *  - No price-history endpoint → charts and Fare Forecast use the demo model.
+ *  - No price-history endpoint → price charts use the demo model.
  * Any API failure falls back to the demo provider so pages never break.
  *
  * Config (server-only env): TRAVELPAYOUTS_TOKEN (required),

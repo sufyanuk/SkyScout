@@ -26,6 +26,8 @@ interface DateRangePickerProps {
   disabled?: boolean;
   disabledLabel?: string;
   className?: string;
+  /** Pick one date: a click selects it and closes the calendar (no presets or Apply). */
+  single?: boolean;
 }
 
 const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
@@ -98,6 +100,7 @@ export function DateRangePicker({
   disabled,
   disabledLabel,
   className,
+  single,
 }: DateRangePickerProps) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<{ start: string; end: string | null } | null>(value);
@@ -114,6 +117,11 @@ export function DateRangePicker({
   }
 
   function pick(date: string) {
+    if (single) {
+      onChange({ start: date, end: date });
+      setOpen(false);
+      return;
+    }
     if (!draft || draft.end) {
       setDraft({ start: date, end: null });
     } else if (date < draft.start) {
@@ -128,7 +136,7 @@ export function DateRangePicker({
     return draft?.start === r.start && draft?.end === r.end;
   })?.label;
 
-  const rangeEnd = draft?.end ?? (draft && hover && hover >= draft.start ? hover : null);
+  const rangeEnd = single ? (draft?.start ?? null) : (draft?.end ?? (draft && hover && hover >= draft.start ? hover : null));
   const inRange = (d: string) => !!draft && !!rangeEnd && d > draft.start && d < rangeEnd;
 
   function apply() {
@@ -166,12 +174,13 @@ export function DateRangePicker({
           </span>
         </span>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-[min(680px,calc(100vw-1.5rem))] p-0">
+      <PopoverContent align="start" className={cn("p-0", single ? "w-[min(560px,calc(100vw-1.5rem))]" : "w-[min(680px,calc(100vw-1.5rem))]")}>
         <div className="border-b px-4 py-3 text-sm">
           <span className="font-semibold">{title}</span>
           {subtitle && <span className="text-muted-foreground"> ({subtitle})</span>}
         </div>
         <div className="flex flex-col sm:flex-row">
+          {!single && (
           <ul className="no-scrollbar flex gap-1 overflow-x-auto border-b p-2 sm:w-40 sm:shrink-0 sm:flex-col sm:border-r sm:border-b-0">
             {presets.map((p) => (
               <li key={p.label} className="shrink-0">
@@ -202,6 +211,7 @@ export function DateRangePicker({
               </span>
             </li>
           </ul>
+          )}
           <div className="grid flex-1 gap-4 p-3 sm:grid-cols-2">
             {[0, 1].map((offset) => {
               const first = shiftMonth(month, offset);
@@ -275,6 +285,7 @@ export function DateRangePicker({
             })}
           </div>
         </div>
+        {!single && (
         <div className="flex items-center justify-between gap-2 border-t px-4 py-3">
           <span className="text-sm text-muted-foreground">
             {draft
@@ -292,6 +303,7 @@ export function DateRangePicker({
             </Button>
           </div>
         </div>
+        )}
       </PopoverContent>
     </Popover>
   );

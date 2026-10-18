@@ -6,7 +6,7 @@ import { ArrowRight, Compass, Plane } from "lucide-react";
 import { EmptyState } from "@/components/common/empty-state";
 import { DestinationArtFor } from "@/components/destinations/destination-art-for";
 import { OriginPicker } from "@/components/explore/origin-picker";
-import { RouteRadar } from "@/components/explore/route-radar";
+import { WorldMap } from "@/components/explore/world-map";
 import { TripBudgetForm } from "@/components/explore/trip-budget-form";
 import type { TravelStyle } from "@/lib/catalog/trip-costs";
 import { tripCost, type TripCost } from "@/lib/insights/trip-cost";
@@ -209,11 +209,10 @@ export default async function ExplorePage({
         <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
           <div className="lg:sticky lg:top-24 lg:self-start">
             <div className="rounded-[2rem] border bg-card p-4 shadow-card sm:p-6">
-              <RouteRadar origin={origin} quotes={quotes} hrefFor={hrefFor} money={money} />
+              <WorldMap origin={origin} quotes={quotes} hrefFor={hrefFor} money={money} />
               <p className="mt-2 text-center text-xs text-muted-foreground">
-                Distance from centre = flight time · direction = compass bearing
-                · <span className="font-semibold text-sunrise">orange</span> = 6
-                cheapest
+                Darker dots are cheaper ·{" "}
+                <span className="font-semibold text-sunrise">orange</span> = 6 cheapest · tap a dot to see deals
               </p>
             </div>
           </div>

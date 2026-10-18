@@ -5,10 +5,8 @@ import { totalPrice } from "@/lib/flights/filtering";
 import { carrierNames, groupTotal, type PartySize } from "@/lib/flights/pricing";
 import type { FlightDeal } from "@/lib/flights/types";
 import { CABIN_LABELS, formatDateRange } from "@/lib/format";
-import type { FareForecast } from "@/lib/insights/forecast";
 import { AirlineMark, DealRatingBadge, SavingsBadge } from "./badges";
 import { FavoriteButton } from "./favorite-button";
-import { ForecastChip } from "./forecast";
 import { ShareButton } from "./share-button";
 import { SliceSummary } from "./slice-summary";
 
@@ -19,11 +17,10 @@ interface FlightCardProps {
   linkQuery?: string;
   /** Show the destination city prominently (for multi-destination searches). */
   showDestination?: boolean;
-  forecast?: FareForecast | null;
 }
 
 /** Horizontal itinerary card used in list view on the results page. */
-export function FlightCard({ deal, party, linkQuery, showDestination, forecast }: FlightCardProps) {
+export function FlightCard({ deal, party, linkQuery, showDestination }: FlightCardProps) {
   const href = `/deals/${deal.id}${linkQuery ? `?${linkQuery}` : ""}`;
   const routeLabel = `${deal.origin.city} to ${deal.destination.city}`;
   const carriers = carrierNames(deal);
@@ -50,7 +47,6 @@ export function FlightCard({ deal, party, linkQuery, showDestination, forecast }
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-1.5 sm:ml-auto">
-            {forecast && <ForecastChip forecast={forecast} />}
             <DealRatingBadge rating={deal.rating} />
           </div>
         </div>

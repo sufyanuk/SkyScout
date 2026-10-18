@@ -6,13 +6,11 @@ import { DestinationArt } from "@/components/destinations/destination-art";
 import { DESTINATIONS } from "@/lib/catalog/destinations";
 import { SectionHeader } from "@/components/common/section-header";
 import { OriginPicker } from "@/components/explore/origin-picker";
-import { ForecastChip } from "@/components/flights/forecast";
 import { SearchBox } from "@/components/search/search-box";
 import { Button } from "@/components/ui/button";
 import { getAirport } from "@/lib/catalog/airports";
 import { todayIso } from "@/lib/dates";
 import { getFlightProvider } from "@/lib/flights";
-import { forecastFare } from "@/lib/insights/forecast";
 import { tripCost } from "@/lib/insights/trip-cost";
 import { buildSearchHref } from "@/lib/search-params";
 import { getDestinationPhotos, type Photo } from "@/lib/photos";
@@ -27,24 +25,18 @@ export default async function HomePage() {
 
   const TRIP_BUDGET = 800;
   const TRIP_NIGHTS = 5;
-  const [best, quotes, fiveNightQuotes] = await Promise.all([
-    provider.getDeals({ origin, collection: "best", limit: 1 }),
+  const [quotes, fiveNightQuotes] = await Promise.all([
     provider.exploreDestinations(origin),
     provider.exploreDestinations(origin, { nights: TRIP_NIGHTS }),
   ]);
 
-  // Live examples for the "Only on SkyScout" section.
-  const forecastDeal = best[0] ?? null;
-  const forecast = forecastDeal
-    ? forecastFare(forecastDeal, await provider.getPriceHistory(forecastDeal.origin.code, forecastDeal.destination.code), today)
-    : null;
+  // Live examples for the trip-budget section.
   const budgetTrips = fiveNightQuotes
     .map((q) => ({ q, cost: tripCost(q.destination.code, q.cheapest.price, TRIP_NIGHTS, "budget") }))
     .filter((t): t is { q: typeof t.q; cost: NonNullable<typeof t.cost> } => !!t.cost && t.cost.total <= TRIP_BUDGET)
     .sort((a, b) => a.cost.total - b.cost.total);
   const cheapest = quotes.slice(0, 8);
   const photos = await getDestinationPhotos(cheapest.map((q) => q.destination.code));
-  const credited = cheapest.filter((q) => photos[q.destination.code]);
 
   return (
     <>
@@ -126,25 +118,6 @@ export default async function HomePage() {
               </li>
             ))}
           </ol>
-          {credited.length > 0 && (
-            <details className="mt-4 text-xs text-muted-foreground">
-              <summary className="cursor-pointer">Photo credits</summary>
-              <ul className="mt-2 space-y-1">
-                {credited.map((q) => {
-                  const photo = photos[q.destination.code];
-                  return (
-                    <li key={q.destination.code}>
-                      {q.destination.city}:{" "}
-                      <a href={photo.sourceUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">
-                        {photo.author}
-                      </a>{" "}
-                      · {photo.license} · Wikimedia Commons
-                    </li>
-                  );
-                })}
-              </ul>
-            </details>
-          )}
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild>
               <Link href={`/explore?from=${origin}`}>
@@ -162,40 +135,10 @@ export default async function HomePage() {
           <SectionHeader
             id="only-here"
             eyebrow="Only on SkyScout"
-            title="Smarter than a list of prices"
-            description="Two things most flight sites won't tell you — built into every search."
+            title="Plan by the whole trip, not just the fare"
+            description="Flight plus stay and daily spending — so a cheap flight to an expensive city doesn't fool you."
           />
-          <div className="grid gap-5 lg:grid-cols-2">
-            {/* Fare Forecast */}
-            <article className="flex flex-col rounded-[2rem] border bg-card p-6 shadow-card">
-              <span className="flex size-11 items-center justify-center rounded-2xl bg-accent text-primary">
-                <Sparkles className="size-5" aria-hidden="true" />
-              </span>
-              <h3 className="mt-4 text-lg font-semibold">Fare Forecast: buy or wait?</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Every fare gets a recommendation with a confidence score, based on its route&apos;s price history, how it
-                compares with the usual price and how close departure is.
-              </p>
-              {forecastDeal && forecast && (
-                <Link
-                  href={`/deals/${forecastDeal.id}`}
-                  className="mt-5 block rounded-2xl bg-muted p-4 transition hover:bg-accent"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-semibold">
-                      {forecastDeal.origin.code} → {forecastDeal.destination.city}
-                    </span>
-                    <ForecastChip forecast={forecast} />
-                  </div>
-                  <p className="mt-1 text-sm text-muted-foreground">{forecast.headline}</p>
-                  <p className="mt-2 text-sm font-semibold">
-                    <Price amount={forecastDeal.price} />{" "}
-                    <span className="font-normal text-muted-foreground">· {forecastDeal.savingsPercent}% below typical</span>
-                  </p>
-                </Link>
-              )}
-            </article>
-
+          <div className="grid gap-5">
             {/* Trip budget */}
             <article className="flex flex-col rounded-[2rem] border bg-card p-6 shadow-card">
               <span className="flex size-11 items-center justify-center rounded-2xl bg-sunrise-soft text-sunrise">

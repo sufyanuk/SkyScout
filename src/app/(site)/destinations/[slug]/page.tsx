@@ -5,7 +5,6 @@ import { notFound } from "next/navigation";
 import { BellPlus, CalendarCheck2, Clock, Coins, Globe2, Languages, Lightbulb, Plane, Search, Sun, TrendingDown } from "lucide-react";
 import { JsonLd } from "@/components/common/json-ld";
 import { SectionHeader } from "@/components/common/section-header";
-import { PhotoCredit } from "@/components/common/photo-credit";
 import { DestinationArt } from "@/components/destinations/destination-art";
 import { OriginPicker } from "@/components/explore/origin-picker";
 import { AirlineMark } from "@/components/flights/badges";
@@ -19,7 +18,6 @@ import { getFlightProvider } from "@/lib/flights";
 import { makeSearchParams } from "@/lib/flights/params";
 import { formatDateRange, formatDuration, formatStops } from "@/lib/format";
 import { buildSearchHref } from "@/lib/search-params";
-import { getDestinationPhotos } from "@/lib/photos";
 import { getHomeAirport } from "@/lib/services/preferences";
 import { absoluteUrl } from "@/lib/site";
 import { cn } from "@/lib/utils";
@@ -56,7 +54,6 @@ export default async function DestinationPage({ params, searchParams }: PageProp
   const origin = await resolveOrigin(typeof sp.from === "string" ? sp.from : undefined, d.airport);
   const originAirport = getAirport(origin)!;
   const destAirport = getAirport(d.airport)!;
-  const heroPhoto = (await getDestinationPhotos([d.airport], 1920))[d.airport];
   const provider = getFlightProvider();
 
   const base = makeSearchParams({ from: origin, to: d.airport });
@@ -109,11 +106,7 @@ export default async function DestinationPage({ params, searchParams }: PageProp
           <DestinationArt code={d.airport} theme={d.art.theme} from={d.art.from} to={d.art.to} photoWidth={1920} />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-black/5" />
         </div>
-        {heroPhoto && (
-          <div className="absolute right-3 bottom-3 z-10">
-            <PhotoCredit photo={heroPhoto} />
-          </div>
-        )}
+
         <div className="container-page flex min-h-[380px] flex-col justify-end pt-16 pb-10 text-white sm:min-h-[460px]">
           <nav aria-label="Breadcrumb" className="mb-4 text-sm text-white/80">
             <Link href="/destinations" className="hover:text-white">

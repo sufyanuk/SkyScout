@@ -24,10 +24,8 @@ import { SectionHeader } from "@/components/common/section-header";
 import { DestinationArtFor } from "@/components/destinations/destination-art-for";
 import { DealRatingBadge, SavingsBadge, AirlineMark } from "@/components/flights/badges";
 import { BookDialog } from "@/components/flights/book-dialog";
-import { FareForecastPanel } from "@/components/flights/forecast";
 import { TripCostCard } from "@/components/flights/trip-cost-card";
 import { bagFeeFor, carrierNames, groupTotal } from "@/lib/flights/pricing";
-import { forecastFare } from "@/lib/insights/forecast";
 import { DealCard } from "@/components/flights/deal-card";
 import { FavoriteButton } from "@/components/flights/favorite-button";
 import { FlightTimeline } from "@/components/flights/flight-timeline";
@@ -99,7 +97,6 @@ export default async function DealPage({ params, searchParams }: PageProps<"/dea
     provider.getSimilarDeals(deal, 6),
   ]);
   const destination = getDestinationByAirport(deal.destination.code);
-  const forecast = departed ? null : forecastFare(deal, history, today);
   const alertTarget = Math.max(20, Math.floor((deal.price * 0.9) / 5) * 5);
   const alertHref = `/alerts?from=${deal.origin.code}&to=${deal.destination.code}&max=${alertTarget}`;
   const carriers = carrierNames(deal);
@@ -210,7 +207,6 @@ export default async function DealPage({ params, searchParams }: PageProps<"/dea
             </div>
           )}
 
-          {forecast && <FareForecastPanel forecast={forecast} alertHref={alertHref} />}
 
           {departed && (
             <div role="status" className="rounded-2xl border border-sunrise/30 bg-sunrise-soft p-4 text-sm text-sunrise">
