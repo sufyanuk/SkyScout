@@ -95,9 +95,8 @@ export default async function HomePage() {
               Find flights <span className="font-display font-normal italic text-primary">worth</span> flying for.
             </h1>
             <p className="mt-5 max-w-2xl text-lg text-muted-foreground sm:text-xl">
-              Uncover <strong className="font-semibold text-foreground">cheaper routes</strong> and the{" "}
-              <strong className="font-semibold text-foreground">best-value dates</strong> across your whole{" "}
-              <strong className="font-semibold text-foreground">travel window</strong>.
+              Find the <strong className="font-semibold text-foreground">cheapest days to fly</strong> to your
+              destination — anywhere within your <strong className="font-semibold text-foreground">travel window</strong>.
             </p>
           </div>
 
