@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Price } from "@/components/common/price";
-import { ArrowRight, BellRing, Compass, Sparkles, TrendingDown, Wallet } from "lucide-react";
+import { ArrowRight, BellRing, Compass, Wallet } from "lucide-react";
 import { JsonLd } from "@/components/common/json-ld";
 import { DestinationArt } from "@/components/destinations/destination-art";
 import { DESTINATIONS } from "@/lib/catalog/destinations";
@@ -174,35 +174,15 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* How it works + alerts */}
-        <section aria-labelledby="how" className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-          <div className="rounded-[2rem] border bg-card p-8 shadow-card sm:p-10">
-            <h2 id="how" className="text-2xl font-semibold tracking-tight sm:text-3xl">
-              How SkyScout finds the good ones
-            </h2>
-            <ol className="mt-8 grid gap-6 sm:grid-cols-3">
-              {[
-                { icon: Compass, title: "Scan", text: "We price thousands of route and date combinations from your airport." },
-                { icon: TrendingDown, title: "Compare", text: "Every fare is measured against what that route typically costs." },
-                { icon: Sparkles, title: "Surface", text: "Only real drops get a deal rating — no sponsored placements." },
-              ].map(({ icon: Icon, title, text }, i) => (
-                <li key={title}>
-                  <span className="flex size-11 items-center justify-center rounded-2xl bg-accent text-primary">
-                    <Icon className="size-5" aria-hidden="true" />
-                  </span>
-                  <h3 className="mt-4 font-semibold">
-                    {i + 1}. {title}
-                  </h3>
-                  <p className="mt-1 text-sm text-muted-foreground">{text}</p>
-                </li>
-              ))}
-            </ol>
-          </div>
+        {/* Price alerts */}
+        <section aria-labelledby="alerts-cta">
           <div className="relative overflow-hidden rounded-[2rem] bg-foreground p-8 text-white shadow-lift sm:p-10">
             <div className="absolute -top-16 -right-16 size-56 rounded-full bg-primary/40 blur-3xl" aria-hidden="true" />
             <div className="absolute -bottom-20 -left-10 size-56 rounded-full bg-sunrise/30 blur-3xl" aria-hidden="true" />
             <BellRing className="relative size-9 text-sunrise" aria-hidden="true" />
-            <h2 className="relative mt-5 text-2xl font-semibold tracking-tight">Let the deal come to you</h2>
+            <h2 id="alerts-cta" className="relative mt-5 text-2xl font-semibold tracking-tight">
+              Let the deal come to you
+            </h2>
             <p className="relative mt-2 text-white/75">
               “Notify me when {airport.city} → London drops below $350.” Set a target and we&apos;ll watch the fares.
             </p>
