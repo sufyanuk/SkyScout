@@ -33,6 +33,22 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
+/**
+ * Travelpayouts Drive, required by the Travelpayouts account set-up. It loads
+ * Travelpayouts' script for partner 587189 (the public affiliate marker).
+ * Set TRAVELPAYOUTS_DRIVE=off to remove it.
+ */
+const TRAVELPAYOUTS_DRIVE =
+  process.env.TRAVELPAYOUTS_DRIVE === "off"
+    ? null
+    : `(function () {
+  var script = document.createElement("script");
+  script.async = 1;
+  script.setAttribute("data-cmp-ab", "2");
+  script.src = "https://tp-em.com/NTg3MTg5.js?t=587189";
+  document.head.appendChild(script);
+})();`;
+
 export const viewport: Viewport = {
   themeColor: "#f7f8fb",
   width: "device-width",
@@ -42,6 +58,11 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${geist.variable} ${geistMono.variable} ${instrumentSerif.variable}`}>
+      {TRAVELPAYOUTS_DRIVE && (
+        <head>
+          <script data-cmp-ab="2" dangerouslySetInnerHTML={{ __html: TRAVELPAYOUTS_DRIVE }} />
+        </head>
+      )}
       <body className="min-h-dvh font-sans">{children}</body>
     </html>
   );
