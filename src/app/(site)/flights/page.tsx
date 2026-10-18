@@ -44,7 +44,9 @@ function whenLabel(params: FlightSearchParams) {
       const stay =
         params.oneWay || (!params.minNights && !params.maxNights)
           ? ""
-          : `, ${params.minNights ?? 1}–${params.maxNights ?? params.minNights ?? 30} nights`;
+          : params.minNights && params.minNights === params.maxNights
+            ? `, ${params.minNights} night${params.minNights === 1 ? "" : "s"}`
+            : `, ${params.minNights ?? 1}–${params.maxNights ?? params.minNights ?? 30} nights`;
       if (!params.departure) return "Flexible dates";
       const end = params.departureEnd ?? params.departure;
       const leave = end === params.departure ? `Departing ${formatDate(params.departure)}` : `Leave ${formatDateRange(params.departure, end)}`;
@@ -59,10 +61,19 @@ function whenLabel(params: FlightSearchParams) {
   }
 }
 
-/** Departure date for the search box (the first day of any date window). */
+/** Date windows for the search box; single dates become one-day ranges. */
 function searchWindows(params: FlightSearchParams) {
-  if (!params.departure) return {};
-  return { departure: params.when === "flexible" ? addDays(params.departure, -3) : params.departure };
+  const flex = params.when === "flexible" ? 3 : 0;
+  if (params.when === "range" || ((params.when === "exact" || params.when === "flexible") && params.departure)) {
+    const dep = params.departure!;
+    return {
+      departure: params.when === "range" ? dep : addDays(dep, -flex),
+      until: params.when === "range" ? (params.departureEnd ?? dep) : addDays(dep, flex),
+      returnFrom: params.returnFrom ?? (params.returnDate ? addDays(params.returnDate, -flex) : undefined),
+      returnUntil: params.returnUntil ?? (params.returnDate ? addDays(params.returnDate, flex) : undefined),
+    };
+  }
+  return {};
 }
 
 function toQuery(sp: SearchParams): string {

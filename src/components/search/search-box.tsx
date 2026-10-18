@@ -28,14 +28,18 @@ import { CABIN_LABELS } from "@/lib/format";
 import { buildSearchHref } from "@/lib/search-params";
 import { cn } from "@/lib/utils";
 import { AirportSelector, ANYWHERE } from "./airport-selector";
-import { DateRangePicker } from "./date-range-picker";
+import { DateRangePicker, type DateRange } from "./date-range-picker";
 import { TravelerSelector } from "./traveler-selector";
 
 export interface SearchBoxValues {
   from: string;
   to: string;
-  /** Departure date (YYYY-MM-DD). Return trips use the length of stay. */
+  /** Departure window (YYYY-MM-DD). */
   departure: string;
+  until: string;
+  /** Return window (YYYY-MM-DD); ignored for one-way trips. */
+  returnFrom: string;
+  returnUntil: string;
   oneWay: boolean;
   adults: number;
   children: number;
@@ -73,7 +77,7 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: "value", label: "Biggest saving" },
 ];
 
-const DEFAULTS: Omit<SearchBoxValues, "from" | "departure"> = {
+const DEFAULTS: Omit<SearchBoxValues, "from" | "departure" | "until" | "returnFrom" | "returnUntil"> = {
   to: ANYWHERE,
   oneWay: false,
   adults: 1,
@@ -92,11 +96,27 @@ const DEFAULTS: Omit<SearchBoxValues, "from" | "departure"> = {
   airlines: [],
 };
 
+/** A return window that fits a departure window: a couple of days after it starts to two weeks after it ends. */
+function defaultReturn(departure: DateRange): DateRange {
+  return { start: addDays(departure.start, 2), end: addDays(departure.end, 14) };
+}
+
 function initialValues(initial: SearchBoxProps["initial"], today: string): SearchBoxValues {
+  const departure =
+    initial.departure && initial.departure > today
+      ? { start: initial.departure, end: initial.until && initial.until >= initial.departure ? initial.until : initial.departure }
+      : { start: addDays(today, 1), end: addDays(today, 30) };
+  const ret =
+    initial.returnFrom && initial.returnUntil && initial.returnUntil >= initial.returnFrom && initial.returnUntil > departure.start
+      ? { start: initial.returnFrom, end: initial.returnUntil }
+      : defaultReturn(departure);
   return {
     ...DEFAULTS,
     ...initial,
-    departure: initial.departure && initial.departure > today ? initial.departure : addDays(today, 14),
+    departure: departure.start,
+    until: departure.end,
+    returnFrom: ret.start,
+    returnUntil: ret.end,
   };
 }
 
@@ -134,6 +154,13 @@ export function SearchBox({ initial, today, variant = "hero", keep, onSubmitted,
   const minDate = addDays(today, 1);
   const moreCount = advancedCount(v);
 
+  function changeDeparture(range: DateRange) {
+    // Keep the return window valid: it must end after the first possible departure.
+    const keepReturn = v.returnUntil > range.start;
+    const ret = keepReturn ? { start: v.returnFrom, end: v.returnUntil } : defaultReturn(range);
+    update({ departure: range.start, until: range.end, returnFrom: ret.start, returnUntil: ret.end });
+  }
+
   function changeCurrency(code: string) {
     startCurrency(async () => {
       await setCurrency(code);
@@ -143,6 +170,10 @@ export function SearchBox({ initial, today, variant = "hero", keep, onSubmitted,
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (!v.oneWay && v.returnUntil <= v.departure) {
+      toast.error("Return dates must be after departure", { description: "Pick a return range that ends after you leave." });
+      return;
+    }
     if (v.to === v.from) {
       toast.error("Origin and destination are the same", { description: "Pick another destination or try “Anywhere”." });
       return;
@@ -160,7 +191,9 @@ export function SearchBox({ initial, today, variant = "hero", keep, onSubmitted,
       cabin: v.cabin,
       extra: {
         ...keep,
-        until: v.departure,
+        until: v.until,
+        returnFrom: v.oneWay ? null : v.returnFrom,
+        returnUntil: v.oneWay ? null : v.returnUntil,
         minNights: v.oneWay ? null : v.minNights,
         maxNights: v.oneWay ? null : v.maxNights,
         sort: v.sort !== "best" ? v.sort : null,
@@ -245,25 +278,37 @@ export function SearchBox({ initial, today, variant = "hero", keep, onSubmitted,
             <ArrowLeftRight className="size-4" aria-hidden="true" />
           </button>
         </div>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:col-span-2">
+        <div className="grid gap-2 sm:grid-cols-2 lg:col-span-2">
           <DateRangePicker
-            single
-            label="Departure date"
-            title="Departure date"
-            value={{ start: v.departure, end: v.departure }}
-            onChange={(r) => update({ departure: r.start })}
+            label="Departure date range"
+            title="Departure Date Range"
+            subtitle="select range of dates to leave"
+            value={{ start: v.departure, end: v.until }}
+            onChange={changeDeparture}
             min={minDate}
             today={today}
           />
+          <DateRangePicker
+            label="Return date range"
+            title="Return Date Range"
+            subtitle="select range of dates to come back"
+            value={{ start: v.returnFrom, end: v.returnUntil }}
+            onChange={(r) => update({ returnFrom: r.start, returnUntil: r.end })}
+            min={addDays(v.departure, 1)}
+            today={today}
+            disabled={v.oneWay}
+            disabledLabel="One-way"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 lg:col-span-4 lg:grid-cols-[1.2fr_1fr_1fr_auto]">
           <TravelerSelector
             adults={v.adults}
             childCount={v.children}
             infants={v.infants}
             onChange={(t) => update(t)}
+            className="col-span-2 lg:col-span-1"
           />
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 lg:col-span-4 lg:grid-cols-[1fr_1fr_auto]">
           <Select value={v.cabin} onValueChange={(cabin) => update({ cabin: cabin as Cabin })}>
             <SelectTrigger aria-label="Cabin class" className="h-auto min-h-[60px] rounded-2xl px-4 [&>span]:flex [&>span]:items-center">
               <span className="flex items-center gap-3">
