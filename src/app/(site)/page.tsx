@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { getAirport } from "@/lib/catalog/airports";
 import { todayIso } from "@/lib/dates";
 import { getFlightProvider } from "@/lib/flights";
-import { tripCost } from "@/lib/insights/trip-cost";
 import { buildSearchHref } from "@/lib/search-params";
 import { getDestinationPhotos, type Photo } from "@/lib/photos";
 import { getHomeAirport } from "@/lib/services/preferences";
@@ -23,18 +22,11 @@ export default async function HomePage() {
   const provider = getFlightProvider();
   const today = todayIso();
 
-  const TRIP_BUDGET = 800;
-  const TRIP_NIGHTS = 5;
-  const [quotes, fiveNightQuotes] = await Promise.all([
-    provider.exploreDestinations(origin),
-    provider.exploreDestinations(origin, { nights: TRIP_NIGHTS }),
-  ]);
+  /** Flight budget for the "Where can … take you?" card; must match an Explore price filter. */
+  const FARE_BUDGET = 300;
+  const quotes = await provider.exploreDestinations(origin);
 
-  // Live examples for the trip-budget section.
-  const budgetTrips = fiveNightQuotes
-    .map((q) => ({ q, cost: tripCost(q.destination.code, q.cheapest.price, TRIP_NIGHTS, "budget") }))
-    .filter((t): t is { q: typeof t.q; cost: NonNullable<typeof t.cost> } => !!t.cost && t.cost.total <= TRIP_BUDGET)
-    .sort((a, b) => a.cost.total - b.cost.total);
+  const underBudget = quotes.filter((q) => q.cheapest.price <= FARE_BUDGET).sort((a, b) => a.cheapest.price - b.cheapest.price);
   const cheapest = quotes.slice(0, 8);
   const photos = await getDestinationPhotos(cheapest.map((q) => q.destination.code));
 
@@ -135,40 +127,47 @@ export default async function HomePage() {
           <SectionHeader
             id="only-here"
             eyebrow="Only on SkyScout"
-            title="Plan by the whole trip, not just the fare"
-            description="Flight plus stay and daily spending — so a cheap flight to an expensive city doesn't fool you."
+            title="Fly further for less"
+            description="Set a fare budget and see every destination you can fly to for it — return flights, cheapest first."
           />
           <div className="grid gap-5">
-            {/* Trip budget */}
+            {/* Fare budget */}
             <article className="flex flex-col rounded-[2rem] border bg-card p-6 shadow-card">
               <span className="flex size-11 items-center justify-center rounded-2xl bg-sunrise-soft text-sunrise">
                 <Wallet className="size-5" aria-hidden="true" />
               </span>
               <h3 className="mt-4 text-lg font-semibold">
-                Where can <Price amount={TRIP_BUDGET} /> take you?
+                Where can a <Price amount={FARE_BUDGET} /> flight take you?
               </h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Search by total trip budget — flight plus stay and daily spending — not just the fare. Here&apos;s{" "}
-                {TRIP_NIGHTS} nights from {airport.city} on a budget:
+                The cheapest return fares from {airport.city} right now, per person:
               </p>
               <ul className="mt-4 space-y-2">
-                {budgetTrips.slice(0, 3).map(({ q, cost }) => (
-                  <li key={q.destination.code} className="flex items-center justify-between rounded-xl bg-muted px-3 py-2 text-sm">
-                    <span className="font-medium">{q.destination.city}</span>
-                    <span className="tabular-nums">
-                      <span className="font-semibold">
-                        <Price amount={cost.total} />
-                      </span>{" "}
-                      <span className="text-xs text-muted-foreground">all-in</span>
-                    </span>
+                {underBudget.slice(0, 3).map((q) => (
+                  <li key={q.destination.code}>
+                    <Link
+                      href={`/deals/${q.cheapest.id}`}
+                      className="flex items-center justify-between rounded-xl bg-muted px-3 py-2 text-sm transition hover:bg-accent"
+                    >
+                      <span className="font-medium">
+                        {airport.city} → {q.destination.city}
+                      </span>
+                      <span className="tabular-nums">
+                        <span className="text-xs text-muted-foreground">from</span>{" "}
+                        <span className="font-semibold">
+                          <Price amount={q.cheapest.price} />
+                        </span>
+                      </span>
+                    </Link>
                   </li>
                 ))}
               </ul>
               <Link
-                href={`/explore?from=${origin}&budget=${TRIP_BUDGET}&nights=${TRIP_NIGHTS}&style=budget`}
+                href={`/explore?from=${origin}&max=${FARE_BUDGET}`}
                 className="mt-auto inline-flex items-center gap-1 pt-4 text-sm font-semibold text-primary hover:underline"
               >
-                See all {budgetTrips.length} trips within budget <ArrowRight className="size-4" aria-hidden="true" />
+                See all {underBudget.length} destinations with flights under <Price amount={FARE_BUDGET} />{" "}
+                <ArrowRight className="size-4" aria-hidden="true" />
               </Link>
             </article>
           </div>
