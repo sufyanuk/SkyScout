@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Price } from "@/components/common/price";
-import { ArrowRight, BellRing, Compass, Wallet } from "lucide-react";
+import { ArrowRight, BellRing, CalendarRange, Compass, Wallet } from "lucide-react";
 import { JsonLd } from "@/components/common/json-ld";
 import { DestinationArt } from "@/components/destinations/destination-art";
 import { DESTINATIONS } from "@/lib/catalog/destinations";
@@ -9,7 +9,9 @@ import { OriginPicker } from "@/components/explore/origin-picker";
 import { SearchBox } from "@/components/search/search-box";
 import { Button } from "@/components/ui/button";
 import { getAirport } from "@/lib/catalog/airports";
-import { todayIso } from "@/lib/dates";
+import { addDays, todayIso } from "@/lib/dates";
+import { makeSearchParams } from "@/lib/flights/params";
+import { formatDateRange } from "@/lib/format";
 import { getFlightProvider } from "@/lib/flights";
 import { buildSearchHref } from "@/lib/search-params";
 import { getDestinationPhotos, type Photo } from "@/lib/photos";
@@ -24,7 +26,41 @@ export default async function HomePage() {
 
   /** Flight budget for the "Where can … take you?" card; must match an Explore price filter. */
   const FARE_BUDGET = 300;
-  const quotes = await provider.exploreDestinations(origin);
+  // Flexible-dates example: one route, any departure in the next 30 days, 5–7 nights.
+  const flexTo = origin === "LHR" ? "CDG" : "LHR";
+  const flexWindow = { start: addDays(today, 7), end: addDays(today, 37) };
+  const [quotes, flexResult] = await Promise.all([
+    provider.exploreDestinations(origin),
+    provider.searchFlights(
+      makeSearchParams({
+        from: origin,
+        to: flexTo,
+        when: "range",
+        departure: flexWindow.start,
+        departureEnd: flexWindow.end,
+        tripLength: "custom",
+        minNights: 5,
+        maxNights: 7,
+      }),
+      { sort: "cheapest" },
+    ),
+  ]);
+  // Cheapest fare for each distinct pair of dates, then the three best.
+  const byDates = new Map<string, (typeof flexResult.deals)[number]>();
+  for (const d of flexResult.deals) {
+    const key = `${d.departureDate}-${d.returnDate}`;
+    if (!byDates.has(key) || d.price < byDates.get(key)!.price) byDates.set(key, d);
+  }
+  const flexDates = [...byDates.values()].sort((a, b) => a.price - b.price);
+  const flexSaving = flexDates.length > 1 ? flexDates[flexDates.length - 1].price - flexDates[0].price : 0;
+  const flexCity = getAirport(flexTo)!.city;
+  const flexHref = buildSearchHref({
+    from: origin,
+    to: flexTo,
+    departure: flexWindow.start,
+    when: "range",
+    extra: { until: flexWindow.end, minNights: 5, maxNights: 7, sort: "cheapest" },
+  });
 
   const underBudget = quotes.filter((q) => q.cheapest.price <= FARE_BUDGET).sort((a, b) => a.cheapest.price - b.cheapest.price);
   const cheapest = quotes.slice(0, 8);
@@ -128,9 +164,58 @@ export default async function HomePage() {
             id="only-here"
             eyebrow="Only on SkyScout"
             title="Fly further for less"
-            description="Set a fare budget and see every destination you can fly to for it — return flights, cheapest first."
+            description="Tell us roughly when, or how much — we'll find the cheapest way to go."
           />
-          <div className="grid gap-5">
+          <div className="grid gap-5 lg:grid-cols-2">
+            {/* Flexible dates */}
+            <article className="flex flex-col rounded-[2rem] border bg-card p-6 shadow-card">
+              <span className="flex size-11 items-center justify-center rounded-2xl bg-accent text-primary">
+                <CalendarRange className="size-5" aria-hidden="true" />
+              </span>
+              <h3 className="mt-4 text-lg font-semibold">Flexible dates? Find the cheapest days to fly.</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Give us a travel window instead of fixed dates and we&apos;ll compare every departure and return
+                in it. Example: {airport.city} → {flexCity}, leaving any day in the next month, 5–7 nights:
+              </p>
+              {flexDates.length === 0 && (
+                <p className="mt-4 rounded-xl bg-muted px-3 py-2 text-sm text-muted-foreground">
+                  No recent fares for this example right now — try it with your own route and dates.
+                </p>
+              )}
+              <ul className="mt-4 space-y-2">
+                {flexDates.slice(0, 3).map((d) => (
+                  <li key={d.id}>
+                    <Link
+                      href={`/deals/${d.id}`}
+                      className="flex items-center justify-between rounded-xl bg-muted px-3 py-2 text-sm transition hover:bg-accent"
+                    >
+                      <span className="font-medium">
+                        {formatDateRange(d.departureDate, d.returnDate)}
+                        <span className="font-normal text-muted-foreground"> · {d.nights} nights</span>
+                      </span>
+                      <span className="font-semibold tabular-nums">
+                        <Price amount={d.price} />
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              {flexSaving > 0 && (
+                <p className="mt-3 text-sm">
+                  <span className="font-semibold text-savings">
+                    Save up to <Price amount={flexSaving} />
+                  </span>{" "}
+                  <span className="text-muted-foreground">versus the priciest dates in the same window.</span>
+                </p>
+              )}
+              <Link
+                href={flexHref}
+                className="mt-auto inline-flex items-center gap-1 pt-4 text-sm font-semibold text-primary hover:underline"
+              >
+                Search your own date range <ArrowRight className="size-4" aria-hidden="true" />
+              </Link>
+            </article>
+
             {/* Fare budget */}
             <article className="flex flex-col rounded-[2rem] border bg-card p-6 shadow-card">
               <span className="flex size-11 items-center justify-center rounded-2xl bg-sunrise-soft text-sunrise">
