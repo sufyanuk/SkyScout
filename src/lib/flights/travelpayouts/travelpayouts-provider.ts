@@ -196,7 +196,7 @@ function estimateMinutes(from: Airport, to: Airport, stops: number): number {
   return Math.round(35 + distanceKm(from, to) / 13.4 + stops * 150);
 }
 
-function slice(from: Airport, to: Airport, departureAt: string, minutes: number, stops: number, airline: string, flightNumber: string): FlightSlice {
+function slice(from: Airport, to: Airport, departureAt: string, minutes: number, stops: number, airline: Airline, flightNumber: string): FlightSlice {
   const departure = localTime(departureAt);
   // Arrival in destination local time = departure + flight time + time-zone shift.
   const arrival = addMinutes(departure, minutes + (to.utcOffset - from.utcOffset));
@@ -208,7 +208,7 @@ function slice(from: Airport, to: Airport, departureAt: string, minutes: number,
     durationMinutes: minutes,
     stops,
     segments: [
-      { flightNumber, airlineCode: airline, from: from.code, to: to.code, departure, arrival, durationMinutes: minutes, aircraft: "" },
+      { flightNumber, airlineCode: airline.code, airlineName: airline.name, from: from.code, to: to.code, departure, arrival, durationMinutes: minutes, aircraft: "" },
     ],
     layovers: [],
   };
@@ -263,8 +263,8 @@ export function toDeal(t: TpTicket, typical?: number): FlightDeal | null {
     destination,
     airline,
     cabin: "economy",
-    outbound: slice(origin, destination, t.departure_at, outMinutes, stopsOut, airline.code, flightNumber),
-    inbound: t.return_at ? slice(destination, origin, t.return_at, backMinutes, stopsBack, airline.code, airline.code) : null,
+    outbound: slice(origin, destination, t.departure_at, outMinutes, stopsOut, airline, flightNumber),
+    inbound: t.return_at ? slice(destination, origin, t.return_at, backMinutes, stopsBack, airline, airline.code) : null,
     departureDate,
     returnDate,
     nights: returnDate ? diffDays(departureDate, returnDate) : null,

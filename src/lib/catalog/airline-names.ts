@@ -3,6 +3,8 @@
  * aren't in the detailed AIRLINES catalogue. The live Travelpayouts airline
  * directory takes precedence; this list is the offline fallback.
  */
+import { getAirline } from "./airlines";
+
 export const AIRLINE_NAMES: Record<string, string> = {
   // Middle East & Gulf
   QR: "Qatar Airways",
@@ -214,3 +216,8 @@ export const AIRLINE_NAMES: Record<string, string> = {
   H2: "SKY Airline",
   BW: "Caribbean Airlines",
 };
+
+/** Best available name for an IATA airline code (falls back to the code). */
+export function airlineName(code: string): string {
+  return getAirline(code)?.name ?? AIRLINE_NAMES[code] ?? code;
+}

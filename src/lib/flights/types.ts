@@ -74,6 +74,8 @@ export interface Airline {
 export interface FlightSegment {
   flightNumber: string;
   airlineCode: string;
+  /** Display name, for carriers outside the built-in airline catalogue. */
+  airlineName?: string;
   from: string;
   to: string;
   /** Local wall-clock time at the departure airport, "YYYY-MM-DDTHH:mm". */

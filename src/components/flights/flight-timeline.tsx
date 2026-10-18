@@ -1,6 +1,6 @@
 import { Clock3, Plane } from "lucide-react";
 import { getAirport } from "@/lib/catalog/airports";
-import { getAirline } from "@/lib/catalog/airlines";
+import { airlineName } from "@/lib/catalog/airline-names";
 import type { FlightSlice } from "@/lib/flights/types";
 import { dayOffset, formatDateWeekday, formatDuration, formatStops, formatTime } from "@/lib/format";
 
@@ -38,10 +38,15 @@ export function FlightTimeline({ slice, title }: { slice: FlightSlice; title: st
                   <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-muted px-3 py-2 text-xs text-muted-foreground">
                     <Plane className="size-3.5" aria-hidden="true" />
                     <span className="font-medium text-foreground">{seg.flightNumber}</span>
-                    <span>· {getAirline(seg.airlineCode)?.name}</span>
-                    <span>· {seg.aircraft}</span>
+                    <span>· {seg.airlineName ?? airlineName(seg.airlineCode)}</span>
+                    {seg.aircraft && <span>· {seg.aircraft}</span>}
                     <span>· {formatDuration(seg.durationMinutes)}</span>
                   </p>
+                  {slice.stops > slice.segments.length - 1 && (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Includes {formatStops(slice.stops).toLowerCase()}. Connection airport and times are shown on the booking site.
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="grid grid-cols-[56px_20px_1fr] gap-x-3">
