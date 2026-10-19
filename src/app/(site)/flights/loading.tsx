@@ -11,12 +11,15 @@ export default function Loading() {
         <Skeleton className="mt-5 h-[60px] w-full rounded-2xl" />
       </div>
       <div>
-        <div className="container-page space-y-5 py-8">
-          <div className="flex justify-between">
-            <Skeleton className="h-10 w-40" />
-            <Skeleton className="h-10 w-44 rounded-full" />
+        <div className="container-page grid gap-8 py-8 lg:grid-cols-[290px_1fr]">
+          <Skeleton className="hidden h-[600px] rounded-3xl lg:block" />
+          <div className="space-y-5">
+            <div className="flex justify-between">
+              <Skeleton className="h-10 w-40" />
+              <Skeleton className="h-10 w-44 rounded-full" />
+            </div>
+            <LoadingSkeleton variant="list" count={4} />
           </div>
-          <LoadingSkeleton variant="list" count={4} />
         </div>
       </div>
     </div>

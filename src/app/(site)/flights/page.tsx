@@ -6,6 +6,8 @@ import { BellPlus, ChevronDown, Pencil, PlaneTakeoff, SearchX } from "lucide-rea
 import { EmptyState } from "@/components/common/empty-state";
 import { DealCard } from "@/components/flights/deal-card";
 import { FlightCard } from "@/components/flights/flight-card";
+import { FilterDrawer } from "@/components/results/filter-drawer";
+import { FilterSidebar } from "@/components/results/filter-sidebar";
 import { LoadMore } from "@/components/results/load-more";
 import { PendingResults, SearchNavigationProvider } from "@/components/results/search-navigation";
 import { SortDropdown } from "@/components/results/sort-dropdown";
@@ -230,7 +232,9 @@ export default async function FlightsPage({ searchParams }: PageProps<"/flights"
       </div>
 
       <div>
-        <div className="container-page py-8">
+        <div className="container-page grid gap-8 py-8 lg:grid-cols-[290px_1fr]">
+          <FilterSidebar facets={result.facets} hasExactDates={!!params.departure} />
+
           <section aria-labelledby="results-heading" className="min-w-0">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -241,6 +245,7 @@ export default async function FlightsPage({ searchParams }: PageProps<"/flights"
                 {cheapest !== null && <p className="text-sm text-muted-foreground">Cheapest from <Price amount={cheapest} /> per person</p>}
               </div>
               <div className="flex items-center gap-2">
+                <FilterDrawer facets={result.facets} hasExactDates={!!params.departure} resultCount={deals.length} />
                 <SortDropdown />
                 <div className="hidden sm:block">
                   <ViewToggle />
