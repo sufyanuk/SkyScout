@@ -83,9 +83,9 @@ export default async function HomePage() {
         }}
       />
 
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-horizon">
-        <div className="container-page relative pt-10 pb-12 sm:pt-16 sm:pb-14">
+      {/* Primary: hero + search */}
+      <section aria-label="Search flights" className="relative overflow-hidden bg-horizon">
+        <div className="container-page relative pt-10 pb-14 sm:pt-16 sm:pb-20">
           <div className="max-w-3xl">
             <h1 className="text-[2.6rem] leading-[1.02] font-semibold tracking-[-0.035em] text-balance sm:text-6xl lg:text-7xl">
               Fly when it&apos;s <span className="font-display font-normal italic text-primary">cheapest</span>.
@@ -96,18 +96,26 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <SearchBox className="mt-9" today={today} initial={{ from: origin }} />
+          <SearchBox className="mt-9 ring-1 ring-primary/10" today={today} initial={{ from: origin }} />
 
         </div>
       </section>
 
-      <div className="container-page space-y-20 pt-14 sm:space-y-24">
+      {/* Secondary: inspiration and tools */}
+      <div className="border-t bg-muted/50">
+        <div className="container-page space-y-10 py-12 sm:space-y-12 sm:py-16">
+        <div className="flex items-center gap-4" aria-hidden="true">
+          <span className="h-px flex-1 bg-border" />
+          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">More ways to save</span>
+          <span className="h-px flex-1 bg-border" />
+        </div>
+
         {/* Cheap from your airport */}
-        <section aria-labelledby="from-airport" className="rounded-[2rem] border bg-card p-6 shadow-card sm:p-10">
-          <div className="mb-8 flex flex-wrap items-end justify-between gap-6">
+        <section aria-labelledby="from-airport" className="rounded-3xl border bg-card p-5 sm:p-8">
+          <div className="mb-6 flex flex-wrap items-end justify-between gap-6">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Anywhere, sorted by price</p>
-              <h2 id="from-airport" className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
+              <h2 id="from-airport" className="mt-1 text-xl font-semibold tracking-tight sm:text-2xl">
                 Cheap flights from {airport.city}
               </h2>
             </div>
@@ -156,6 +164,7 @@ export default async function HomePage() {
         {/* Differentiators */}
         <section aria-labelledby="only-here">
           <SectionHeader
+            size="sm"
             id="only-here"
             eyebrow="Only on SkyScout"
             title="Fly further for less"
@@ -163,7 +172,7 @@ export default async function HomePage() {
           />
           <div className="grid gap-5 lg:grid-cols-2">
             {/* Flexible dates */}
-            <article className="flex flex-col rounded-[2rem] border bg-card p-6 shadow-card">
+            <article className="flex flex-col rounded-3xl border bg-card p-5 sm:p-6">
               <span className="flex size-11 items-center justify-center rounded-2xl bg-accent text-primary">
                 <CalendarRange className="size-5" aria-hidden="true" />
               </span>
@@ -212,7 +221,7 @@ export default async function HomePage() {
             </article>
 
             {/* Fare budget */}
-            <article className="flex flex-col rounded-[2rem] border bg-card p-6 shadow-card">
+            <article className="flex flex-col rounded-3xl border bg-card p-5 sm:p-6">
               <span className="flex size-11 items-center justify-center rounded-2xl bg-sunrise-soft text-sunrise">
                 <Wallet className="size-5" aria-hidden="true" />
               </span>
@@ -255,21 +264,22 @@ export default async function HomePage() {
 
         {/* Price alerts */}
         <section aria-labelledby="alerts-cta">
-          <div className="relative overflow-hidden rounded-[2rem] bg-foreground p-8 text-white shadow-lift sm:p-10">
+          <div className="relative overflow-hidden rounded-3xl bg-foreground p-6 text-white sm:p-8">
             <div className="absolute -top-16 -right-16 size-56 rounded-full bg-primary/40 blur-3xl" aria-hidden="true" />
             <div className="absolute -bottom-20 -left-10 size-56 rounded-full bg-sunrise/30 blur-3xl" aria-hidden="true" />
-            <BellRing className="relative size-9 text-sunrise" aria-hidden="true" />
-            <h2 id="alerts-cta" className="relative mt-5 text-2xl font-semibold tracking-tight">
+            <BellRing className="relative size-7 text-sunrise" aria-hidden="true" />
+            <h2 id="alerts-cta" className="relative mt-4 text-xl font-semibold tracking-tight sm:text-2xl">
               Let the deal come to you
             </h2>
             <p className="relative mt-2 text-white/75">
               “Notify me when {airport.city} → London drops below $350.” Set a target and we&apos;ll watch the fares.
             </p>
-            <Button asChild variant="sunrise" size="lg" className="relative mt-7">
+            <Button asChild variant="sunrise" size="lg" className="relative mt-5">
               <Link href={`/alerts?from=${origin}&to=LHR&max=350`}>Create a price alert</Link>
             </Button>
           </div>
         </section>
+        </div>
       </div>
     </>
   );
