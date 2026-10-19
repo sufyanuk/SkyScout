@@ -8,7 +8,7 @@ export function ViewToggle() {
   const nav = useSearchNavigation();
   const view = nav.get("view") === "grid" ? "grid" : "list";
   return (
-    <div role="radiogroup" aria-label="Results layout" className="flex rounded-full border bg-card p-1">
+    <div role="radiogroup" aria-label="Results layout" className="flex rounded-full bg-card p-1 shadow-card">
       {[
         { value: "list", label: "List view", Icon: List },
         { value: "grid", label: "Grid view", Icon: LayoutGrid },

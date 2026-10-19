@@ -533,7 +533,7 @@ function NumberInput({
   return (
     <div
       className={cn(
-        "flex h-11 w-full overflow-hidden rounded-xl border border-input bg-card shadow-xs focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/20",
+        "flex h-11 w-full overflow-hidden rounded-xl border border-transparent bg-muted shadow-xs focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/20",
         disabled && "opacity-50",
       )}
     >
@@ -585,7 +585,7 @@ function AirlinePicker({ value, onChange }: { value: string[]; onChange: (codes:
     <div className="space-y-1.5">
       <OptionLabel label="Airlines" />
       <Popover>
-        <PopoverTrigger className="flex h-11 w-full items-center justify-between rounded-xl border border-input bg-card px-3.5 text-left text-[15px] shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/20">
+        <PopoverTrigger className="flex h-11 w-full items-center justify-between rounded-xl border border-transparent bg-muted px-3.5 text-left text-[15px] shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/20">
           <span className={cn("truncate", value.length === 0 && "text-muted-foreground")}>{label}</span>
           <ChevronDown className="size-4 opacity-50" aria-hidden="true" />
         </PopoverTrigger>

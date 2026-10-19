@@ -25,7 +25,7 @@ export function TravelerSelector({ adults, childCount, infants, onChange, classN
     <Popover>
       <PopoverTrigger
         className={cn(
-          "flex min-h-[60px] w-full items-center gap-3 rounded-2xl border border-input bg-card px-4 text-left outline-none transition hover:border-foreground/25 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/15",
+          "flex min-h-[60px] w-full items-center gap-3 rounded-2xl border border-transparent bg-muted px-4 text-left outline-none transition hover:bg-accent focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/15",
           className,
         )}
         aria-label={`Travellers: ${travelerLabel(adults, childCount, infants)}`}

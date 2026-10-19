@@ -33,7 +33,7 @@ export function ProfileForm({ name, email, homeAirport }: { name: string; email:
           id="profile-airport"
           name="homeAirport"
           defaultValue={homeAirport}
-          className="flex h-11 w-full rounded-xl border border-input bg-card px-3 text-[15px] shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/20"
+          className="flex h-11 w-full rounded-xl border border-transparent bg-muted px-3 text-[15px] shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/20"
         >
           {AIRPORT_OPTIONS.map((a) => (
             <option key={a.code} value={a.code}>

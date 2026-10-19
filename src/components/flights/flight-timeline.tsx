@@ -65,7 +65,7 @@ export function FlightTimeline({ slice, title }: { slice: FlightSlice; title: st
                 </div>
               </div>
               {layover && (
-                <div className="my-3 ml-[88px] flex items-center gap-2 rounded-xl border border-dashed border-sunrise/40 bg-sunrise-soft px-3 py-2 text-xs font-medium text-sunrise">
+                <div className="my-3 ml-[88px] flex items-center gap-2 rounded-xl bg-sunrise-soft px-3 py-2 text-xs font-medium text-sunrise">
                   <Clock3 className="size-3.5" aria-hidden="true" />
                   {formatDuration(layover.durationMinutes)} layover in {getAirport(layover.airport)?.city}
                   {layover.durationMinutes > 240 && " · long connection"}

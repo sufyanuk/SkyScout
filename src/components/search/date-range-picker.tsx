@@ -141,7 +141,7 @@ export function DateRangePicker({
 
   if (disabled) {
     return (
-      <div className={cn("flex min-h-[60px] items-center gap-3 rounded-2xl border border-input bg-muted/60 px-4", className)}>
+      <div className={cn("flex min-h-[60px] items-center gap-3 rounded-2xl border border-transparent bg-muted px-4", className)}>
         <CalendarDays className="size-[18px] text-muted-foreground" aria-hidden="true" />
         <span className="flex flex-col py-2">
           <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</span>
@@ -155,7 +155,7 @@ export function DateRangePicker({
     <Popover open={open} onOpenChange={openChange}>
       <PopoverTrigger
         className={cn(
-          "flex min-h-[60px] w-full items-center gap-3 rounded-2xl border border-input bg-card px-4 text-left outline-none transition hover:border-foreground/25 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/15",
+          "flex min-h-[60px] w-full items-center gap-3 rounded-2xl border border-transparent bg-muted px-4 text-left outline-none transition hover:bg-accent focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/15",
           className,
         )}
         aria-label={`${label}: ${value ? formatRange(value) : "choose dates"}`}

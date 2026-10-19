@@ -197,7 +197,7 @@ export default async function DealPage({ params, searchParams }: PageProps<"/dea
           </section>
 
           {deal.selfTransfer && (
-            <div role="note" className="rounded-2xl border border-sunrise/30 bg-sunrise-soft p-4 text-sm text-sunrise">
+            <div role="note" className="rounded-2xl bg-sunrise-soft p-4 text-sm text-sunrise">
               <p className="font-semibold">Self-transfer itinerary — two separate tickets</p>
               <p className="mt-1">
                 In {deal.outbound.layovers.map((l) => l.airport).join(", ")} you&apos;ll collect your bags, re-check them and
@@ -209,7 +209,7 @@ export default async function DealPage({ params, searchParams }: PageProps<"/dea
 
 
           {departed && (
-            <div role="status" className="rounded-2xl border border-sunrise/30 bg-sunrise-soft p-4 text-sm text-sunrise">
+            <div role="status" className="rounded-2xl bg-sunrise-soft p-4 text-sm text-sunrise">
               This flight has already departed. Have a look at similar deals below.
             </div>
           )}
@@ -392,7 +392,7 @@ export default async function DealPage({ params, searchParams }: PageProps<"/dea
             {destination && (
               <Link
                 href={`/destinations/${destination.slug}`}
-                className="group flex items-center gap-3 rounded-3xl border bg-card p-4 shadow-card transition hover:shadow-lift"
+                className="group flex items-center gap-3 rounded-3xl bg-card p-4 shadow-card card-zoom"
               >
                 <span className="size-14 shrink-0 overflow-hidden rounded-2xl">
                   <DestinationArtFor code={deal.destination.code} showCode={false} />
@@ -460,7 +460,7 @@ export default async function DealPage({ params, searchParams }: PageProps<"/dea
 
 function FareItem({ icon: Icon, ok, title, text }: { icon: typeof Luggage; ok: boolean; title: string; text: string }) {
   return (
-    <li className="flex gap-3 rounded-2xl border p-3.5">
+    <li className="flex gap-3 rounded-2xl bg-muted/60 p-3.5">
       <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-xl", ok ? "bg-savings-soft text-savings" : "bg-muted text-muted-foreground")}>
         <Icon className="size-4" aria-hidden="true" />
       </span>

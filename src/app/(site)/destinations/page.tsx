@@ -50,7 +50,7 @@ export default async function DestinationsPage({ searchParams }: PageProps<"/des
             aria-current={tag === t.id ? "page" : undefined}
             className={cn(
               "shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition",
-              tag === t.id ? "border-primary bg-primary text-white" : "bg-card hover:border-foreground/30",
+              tag === t.id ? "border-primary bg-primary text-white" : "bg-card shadow-card hover:bg-accent",
             )}
           >
             {t.label}

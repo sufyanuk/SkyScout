@@ -361,7 +361,7 @@ function Pill({
         "rounded-full border px-3.5 py-1.5 text-sm font-medium transition",
         active
           ? "border-primary bg-accent text-accent-foreground"
-          : "bg-card hover:border-foreground/30",
+          : "bg-card shadow-card hover:bg-accent",
       )}
     >
       {children}

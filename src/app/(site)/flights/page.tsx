@@ -74,7 +74,7 @@ function datesLabel(params: FlightSearchParams) {
 
 function SummaryField({ label, value, className }: { label: string; value: string; className?: string }) {
   return (
-    <span className={cn("flex min-w-0 flex-1 flex-col justify-center rounded-xl border px-3 py-2", className)}>
+    <span className={cn("flex min-w-0 flex-1 flex-col justify-center rounded-xl bg-muted px-3 py-2", className)}>
       <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
       <span className="truncate text-sm font-semibold">{value}</span>
     </span>
@@ -229,7 +229,7 @@ export default async function FlightsPage({ searchParams }: PageProps<"/flights"
         </details>
       </div>
 
-      <div className="bg-results border-t">
+      <div>
         <div className="container-page py-8">
           <section aria-labelledby="results-heading" className="min-w-0">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -249,7 +249,7 @@ export default async function FlightsPage({ searchParams }: PageProps<"/flights"
             </div>
 
             {deals[0]?.provider === "travelpayouts" && (
-              <p className="mb-4 rounded-2xl bg-muted px-4 py-2.5 text-sm text-muted-foreground">
+              <p className="mb-4 rounded-2xl bg-card px-4 shadow-card py-2.5 text-sm text-muted-foreground">
                 Real fares found recently on Aviasales. Prices can change before you book; baggage and fare rules are
                 shown on the booking site.
               </p>

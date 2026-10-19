@@ -8,7 +8,7 @@ import { UserMenu } from "./user-menu";
 export async function Header() {
   const user = await getCurrentUser();
   return (
-    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 bg-white/90 shadow-[0_1px_8px_rgb(15_27_61/0.06)] backdrop-blur-xl">
       <div className="container-page flex h-16 items-center justify-between gap-4">
         <div className="flex items-center gap-6">
           <Logo />

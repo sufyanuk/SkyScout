@@ -10,7 +10,7 @@ export default function Loading() {
         <Skeleton className="h-4 w-60" />
         <Skeleton className="mt-5 h-[60px] w-full rounded-2xl" />
       </div>
-      <div className="bg-results border-t">
+      <div>
         <div className="container-page space-y-5 py-8">
           <div className="flex justify-between">
             <Skeleton className="h-10 w-40" />

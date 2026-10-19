@@ -18,7 +18,7 @@ export function FieldShell({
   return (
     <div
       className={cn(
-        "relative flex min-h-[60px] items-center gap-3 rounded-2xl border border-input bg-card px-4 transition-[box-shadow,border-color] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/15 hover:border-foreground/25",
+        "relative flex min-h-[60px] items-center gap-3 rounded-2xl border border-transparent bg-muted px-4 transition-[box-shadow,border-color] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/15 hover:bg-accent",
         className,
       )}
     >
