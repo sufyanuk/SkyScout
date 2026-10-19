@@ -54,7 +54,7 @@ export default async function DealsPage({ searchParams }: PageProps<"/deals">) {
             scroll={false}
             className={cn(
               "shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition",
-              c.id === collection.id ? "border-foreground bg-foreground text-white" : "bg-card hover:border-foreground/30",
+              c.id === collection.id ? "border-primary bg-primary text-white" : "bg-card hover:border-foreground/30",
             )}
           >
             {c.label}

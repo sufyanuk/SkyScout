@@ -14,7 +14,7 @@
   --card-foreground: #141414;
   --popover: #ffffff;
   --popover-foreground: #141414;
-  --primary: #141414;
+  --primary: #1e3a8a;
   --primary-foreground: #ffffff;
   --secondary: #efefeb;
   --secondary-foreground: #141414;
@@ -25,13 +25,14 @@
   --destructive: #dc2626;
   --border: #e6e6e1;
   --input: #e1e1dc;
-  --ring: #141414;
+  --ring: #1e3a8a;
   --sunrise: #ff6a3d;
   --sunrise-soft: #fff1ec;
   --savings: #0b8a5f;
   --savings-soft: #e6f6ef;
   --sky: #efefeb;
-  --brand: #5b5bd6;
+  --brand: #7c9cff;
+  --navy: #0d1b3e;
 }
 
 @theme inline {
@@ -63,6 +64,7 @@
   --color-savings-soft: var(--savings-soft);
   --color-sky: var(--sky);
   --color-brand: var(--brand);
+  --color-navy: var(--navy);
 
   --radius-sm: calc(var(--radius) - 6px);
   --radius-md: calc(var(--radius) - 4px);
@@ -117,6 +119,13 @@
 }
 
 /* Soft horizon gradient used behind hero sections. */
+/* Modern deep-blue backdrop for the homepage search section. */
+@utility bg-navy-hero {
+  background:
+    radial-gradient(900px 400px at 85% -20%, rgb(59 92 220 / 0.35), transparent 60%),
+    linear-gradient(180deg, #0d1b3e 0%, #10224d 100%);
+}
+
 @utility bg-horizon {
   background: var(--background);
 }

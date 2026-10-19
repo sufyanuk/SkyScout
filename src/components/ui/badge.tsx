@@ -13,7 +13,7 @@ const badgeVariants = cva(
         savings: "bg-savings-soft text-savings",
         sunrise: "bg-sunrise-soft text-sunrise",
         accent: "bg-accent text-accent-foreground",
-        dark: "bg-foreground text-white",
+        dark: "bg-primary text-white",
       },
     },
     defaultVariants: { variant: "default" },

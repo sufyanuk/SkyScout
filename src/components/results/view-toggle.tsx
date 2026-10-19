@@ -22,7 +22,7 @@ export function ViewToggle() {
           onClick={() => nav.update({ view: value === "list" ? null : value }, { keepLimit: true })}
           className={cn(
             "flex size-8 items-center justify-center rounded-full text-muted-foreground transition",
-            view === value && "bg-foreground text-white",
+            view === value && "bg-primary text-white",
           )}
         >
           <Icon className="size-4" aria-hidden="true" />

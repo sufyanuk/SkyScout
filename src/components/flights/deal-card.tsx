@@ -103,7 +103,7 @@ export function DealCard({
           </div>
           <Link
             href={href}
-            className="inline-flex h-9 shrink-0 items-center gap-1 rounded-full bg-foreground px-4 text-sm font-semibold text-white transition-colors after:absolute after:inset-0 after:content-[''] hover:bg-primary focus-visible:ring-[3px] focus-visible:ring-ring/40 focus-visible:outline-none"
+            className="inline-flex h-9 shrink-0 items-center gap-1 rounded-full bg-primary px-4 text-sm font-semibold text-white transition-colors after:absolute after:inset-0 after:content-[''] hover:bg-primary focus-visible:ring-[3px] focus-visible:ring-ring/40 focus-visible:outline-none"
           >
             View deal <ArrowRight className="size-4" aria-hidden="true" />
             <span className="sr-only">: {routeLabel}, <Price amount={totalPrice(deal)} /></span>

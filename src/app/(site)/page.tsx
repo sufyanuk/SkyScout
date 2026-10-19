@@ -83,7 +83,7 @@ export default async function HomePage() {
       />
 
       {/* Search */}
-      <section aria-label="Search flights" className="bg-foreground text-white">
+      <section aria-label="Search flights" className="bg-navy-hero text-white">
         <div className="container-page pt-12 pb-12 text-center sm:pt-20 sm:pb-16">
           <p className="inline-flex items-center gap-1.5 text-sm text-white/60">
             <Sparkle className="size-4 fill-brand text-brand" aria-hidden="true" /> SkyScout
@@ -94,7 +94,7 @@ export default async function HomePage() {
           <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-white/65 sm:text-base">
             Tell us your travel window and destination — we&apos;ll find the best-value days to go.
           </p>
-          <SearchBox className="mt-8 border-white/10 text-left text-foreground" today={today} initial={{ from: origin }} />
+          <SearchBox className="mt-8 border-white/10 text-left text-foreground shadow-lift" today={today} initial={{ from: origin }} />
         </div>
       </section>
 
