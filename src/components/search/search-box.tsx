@@ -220,7 +220,7 @@ export function SearchBox({ initial, today, variant = "hero", keep, onSubmitted,
       role="search"
       aria-label="Search flights"
       className={cn(
-        "rounded-[28px] border bg-card/95 p-3 shadow-float backdrop-blur sm:p-4",
+        "rounded-2xl border bg-card p-3 shadow-float sm:p-4",
         compact && "rounded-3xl p-3 shadow-card sm:p-3",
         className,
       )}

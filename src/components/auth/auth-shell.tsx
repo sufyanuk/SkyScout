@@ -10,7 +10,7 @@ export function AuthShell({ title, subtitle, children }: { title: string; subtit
         <p className="mt-2 text-muted-foreground">{subtitle}</p>
         <div className="mt-8">{children}</div>
       </div>
-      <div className="relative hidden overflow-hidden rounded-[2rem] shadow-float lg:block">
+      <div className="relative hidden overflow-hidden rounded-2xl shadow-float lg:block">
         <div className="h-[560px]">
           <DestinationArt code="SKY" theme="island" from="#bae6fd" to="#1d4ed8" />
         </div>

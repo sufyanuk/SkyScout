@@ -150,7 +150,7 @@ export default async function DealPage({ params, searchParams }: PageProps<"/dea
       <div className="container-page mt-5 grid gap-8 lg:grid-cols-[1fr_380px]">
         <div className="min-w-0 space-y-8">
           {/* Hero */}
-          <section className="overflow-hidden rounded-[2rem] border bg-card shadow-card">
+          <section className="overflow-hidden rounded-2xl border bg-card shadow-card">
             <div className="relative h-48 sm:h-64">
               <DestinationArtFor code={deal.destination.code} photoWidth={960} />
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
@@ -297,7 +297,7 @@ export default async function DealPage({ params, searchParams }: PageProps<"/dea
         {/* Price panel */}
         <aside aria-label="Price and booking" className="lg:row-span-2">
           <div className="sticky top-24 space-y-4">
-            <div className="rounded-[2rem] border bg-card p-6 shadow-lift">
+            <div className="rounded-2xl border bg-card p-6 shadow-lift">
               <SavingsBadge percent={deal.savingsPercent} />
               <p className="mt-3 text-5xl font-semibold tracking-tight tabular-nums">
                 <Price amount={perPerson} />

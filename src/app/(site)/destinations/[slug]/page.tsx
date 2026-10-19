@@ -141,7 +141,7 @@ export default async function DestinationPage({ params, searchParams }: PageProp
 
       <div className="container-page space-y-16 pt-8">
         {/* Key stats */}
-        <section aria-label="Flight facts" className="flex flex-col gap-4 rounded-[2rem] border bg-card p-5 shadow-card sm:p-6 lg:flex-row lg:items-center">
+        <section aria-label="Flight facts" className="flex flex-col gap-4 rounded-2xl border bg-card p-5 shadow-card sm:p-6 lg:flex-row lg:items-center">
           <OriginPicker value={origin} query="" className="lg:max-w-60" />
           <dl className="grid flex-1 grid-cols-2 gap-4 md:grid-cols-4">
             <Stat icon={TrendingDown} label="Cheapest right now" value={cheapest ? <Price amount={cheapest.price} /> : "—"} hint={cheapest ? formatDateRange(cheapest.departureDate, cheapest.returnDate) : undefined} highlight />
@@ -263,7 +263,7 @@ export default async function DestinationPage({ params, searchParams }: PageProp
         </section>
 
         {/* Travel info */}
-        <section aria-labelledby="info" className="rounded-[2rem] border bg-card p-6 shadow-card sm:p-8">
+        <section aria-labelledby="info" className="rounded-2xl border bg-card p-6 shadow-card sm:p-8">
           <h2 id="info" className="text-2xl font-semibold tracking-tight">
             Travel information
           </h2>

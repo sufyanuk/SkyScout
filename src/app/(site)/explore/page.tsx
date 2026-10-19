@@ -208,7 +208,7 @@ export default async function ExplorePage({
       ) : (
         <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
           <div className="lg:sticky lg:top-24 lg:self-start">
-            <div className="rounded-[2rem] border bg-card p-4 shadow-card sm:p-6">
+            <div className="rounded-2xl border bg-card p-4 shadow-card sm:p-6">
               <WorldMap origin={origin} quotes={quotes} hrefFor={hrefFor} money={money} />
               <p className="mt-2 text-center text-xs text-muted-foreground">
                 Darker dots are cheaper ·{" "}

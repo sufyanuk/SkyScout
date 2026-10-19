@@ -7,8 +7,8 @@
  * a sunrise coral for deal highlights and a fresh green for savings.
  */
 :root {
-  --radius: 1rem;
-  --background: #f7f8fb;
+  --radius: 0.75rem;
+  --background: #ffffff;
   --foreground: #0b1324;
   --card: #ffffff;
   --card-foreground: #0b1324;
@@ -16,15 +16,15 @@
   --popover-foreground: #0b1324;
   --primary: #2348f0;
   --primary-foreground: #ffffff;
-  --secondary: #eef1f8;
+  --secondary: #f4f5f7;
   --secondary-foreground: #0b1324;
-  --muted: #f0f2f7;
+  --muted: #f4f5f7;
   --muted-foreground: #5d6679;
-  --accent: #eef2ff;
+  --accent: #f1f4ff;
   --accent-foreground: #1b37c4;
   --destructive: #dc2626;
-  --border: #e3e7ef;
-  --input: #dde2ec;
+  --border: #e7e9ee;
+  --input: #e1e4ea;
   --ring: #2348f0;
   --sunrise: #ff6a3d;
   --sunrise-soft: #fff1ec;
@@ -66,12 +66,12 @@
   --radius-md: calc(var(--radius) - 4px);
   --radius-lg: calc(var(--radius) - 2px);
   --radius-xl: var(--radius);
-  --radius-2xl: calc(var(--radius) + 6px);
-  --radius-3xl: calc(var(--radius) + 14px);
+  --radius-2xl: calc(var(--radius) + 4px);
+  --radius-3xl: calc(var(--radius) + 6px);
 
-  --shadow-card: 0 1px 2px rgb(11 19 36 / 0.04), 0 6px 24px -8px rgb(11 19 36 / 0.08);
-  --shadow-lift: 0 2px 4px rgb(11 19 36 / 0.04), 0 18px 40px -12px rgb(11 19 36 / 0.18);
-  --shadow-float: 0 24px 64px -16px rgb(17 35 120 / 0.28);
+  --shadow-card: 0 1px 2px rgb(11 19 36 / 0.03);
+  --shadow-lift: 0 4px 16px -6px rgb(11 19 36 / 0.1);
+  --shadow-float: 0 6px 24px -10px rgb(11 19 36 / 0.12);
 }
 
 @layer base {
@@ -116,10 +116,7 @@
 
 /* Soft horizon gradient used behind hero sections. */
 @utility bg-horizon {
-  background:
-    radial-gradient(1200px 500px at 85% -10%, rgb(255 106 61 / 0.16), transparent 60%),
-    radial-gradient(900px 500px at 0% 0%, rgb(35 72 240 / 0.14), transparent 60%),
-    linear-gradient(180deg, #eef2ff 0%, #f7f8fb 70%);
+  background: var(--background);
 }
 
 @keyframes dash-flow {

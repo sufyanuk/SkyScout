@@ -52,10 +52,9 @@ export function TripBudgetForm({
   return (
     <form
       onSubmit={submit}
-      className="relative overflow-hidden rounded-[2rem] bg-foreground p-5 text-white shadow-lift sm:p-6"
+      className="relative overflow-hidden rounded-2xl bg-foreground p-5 text-white shadow-lift sm:p-6"
       aria-label="Plan by total trip budget"
     >
-      <div className="pointer-events-none absolute -top-20 -right-10 size-56 rounded-full bg-primary/40 blur-3xl" aria-hidden="true" />
       <div className="relative flex flex-wrap items-end gap-x-4 gap-y-3">
         <div className="mr-auto">
           <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-sunrise">

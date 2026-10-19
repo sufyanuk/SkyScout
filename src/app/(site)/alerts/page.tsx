@@ -65,7 +65,7 @@ export default async function AlertsPage({ searchParams }: PageProps<"/alerts">)
       )}
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[420px_1fr]">
-        <section aria-labelledby="new-alert" className="h-fit rounded-[2rem] border bg-card p-6 shadow-card lg:sticky lg:top-24">
+        <section aria-labelledby="new-alert" className="h-fit rounded-2xl border bg-card p-6 shadow-card lg:sticky lg:top-24">
           <h2 id="new-alert" className="mb-5 flex items-center gap-2 text-lg font-semibold">
             <BellRing className="size-5 text-primary" aria-hidden="true" /> New alert
           </h2>

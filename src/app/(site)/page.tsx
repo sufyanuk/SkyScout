@@ -1,11 +1,9 @@
 import Link from "next/link";
 import { Price } from "@/components/common/price";
-import { ArrowRight, BellRing, CalendarRange, Compass, Wallet } from "lucide-react";
+import { ArrowRight, BellRing } from "lucide-react";
 import { JsonLd } from "@/components/common/json-ld";
 import { DestinationArt } from "@/components/destinations/destination-art";
 import { DESTINATIONS } from "@/lib/catalog/destinations";
-import { SectionHeader } from "@/components/common/section-header";
-import { OriginPicker } from "@/components/explore/origin-picker";
 import { SearchBox } from "@/components/search/search-box";
 import { Button } from "@/components/ui/button";
 import { getAirport } from "@/lib/catalog/airports";
@@ -83,169 +81,105 @@ export default async function HomePage() {
         }}
       />
 
-      {/* Primary: hero + search */}
-      <section aria-label="Search flights" className="relative overflow-hidden bg-horizon">
-        <div className="container-page relative pt-10 pb-14 sm:pt-16 sm:pb-20">
-          <div className="max-w-3xl">
-            <h1 className="text-[2.6rem] leading-[1.02] font-semibold tracking-[-0.035em] text-balance sm:text-6xl lg:text-7xl">
-              Fly when it&apos;s <span className="font-display font-normal italic text-primary">cheapest</span>.
-            </h1>
-            <p className="mt-5 max-w-2xl text-lg text-muted-foreground sm:text-xl">
-              Tell us your <strong className="font-semibold text-foreground">travel window</strong> and destination —
-              we&apos;ll find the <strong className="font-semibold text-foreground">best-value days</strong> to go.
-            </p>
-          </div>
-
-          <SearchBox className="mt-9 ring-1 ring-primary/10" today={today} initial={{ from: origin }} />
-
+      {/* Search */}
+      <section aria-label="Search flights" className="border-b">
+        <div className="container-page pt-12 pb-12 sm:pt-20 sm:pb-16">
+          <h1 className="text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
+            Fly when it&apos;s <span className="text-primary">cheapest</span>.
+          </h1>
+          <p className="mt-3 max-w-xl text-base text-muted-foreground sm:text-lg">
+            Tell us your travel window and destination — we&apos;ll find the best-value days to go.
+          </p>
+          <SearchBox className="mt-8" today={today} initial={{ from: origin }} />
         </div>
       </section>
 
-      {/* Secondary: inspiration and tools */}
-      <div className="border-t bg-muted/50">
-        <div className="container-page space-y-10 py-12 sm:space-y-12 sm:py-16">
-        <div className="flex items-center gap-4" aria-hidden="true">
-          <span className="h-px flex-1 bg-border" />
-          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">More ways to save</span>
-          <span className="h-px flex-1 bg-border" />
-        </div>
-
-        {/* Cheap from your airport */}
-        <section aria-labelledby="from-airport" className="rounded-3xl border bg-card p-5 sm:p-8">
-          <div className="mb-6 flex flex-wrap items-end justify-between gap-6">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Anywhere, sorted by price</p>
-              <h2 id="from-airport" className="mt-1 text-xl font-semibold tracking-tight sm:text-2xl">
-                Cheap flights from {airport.city}
-              </h2>
-            </div>
-            <OriginPicker value={origin} query="" />
-          </div>
+      <div className="container-page space-y-16 py-14 sm:space-y-20 sm:py-20">
+        {/* Cheap flights from your airport */}
+        <section aria-labelledby="from-airport">
+          <MinimalHeader
+            id="from-airport"
+            title={`Cheapest flights from ${airport.city}`}
+            subtitle="Return fares to anywhere, lowest first."
+            href={`/explore?from=${origin}`}
+            linkLabel="Explore all"
+          />
           <ol className="grid grid-cols-1 gap-x-10 sm:grid-cols-2">
-            {cheapest.map((q, i) => (
+            {cheapest.map((q) => (
               <li key={q.destination.code}>
                 <Link
                   href={`/deals/${q.cheapest.id}`}
-                  className="group flex min-w-0 items-center gap-3 border-b py-3.5 transition-colors hover:text-primary sm:gap-4"
+                  className="group flex min-w-0 items-center gap-3 border-b py-3 transition-colors hover:text-primary"
                 >
-                  <span className="w-4 shrink-0 text-sm font-semibold text-muted-foreground tabular-nums">{i + 1}</span>
                   <DestinationThumb code={q.destination.code} photo={photos[q.destination.code]} alt={`${q.destination.city}, ${q.destination.country}`} />
                   <span className="min-w-0 flex-1">
-                    <span className="block font-semibold">
-                      {origin} → {q.destination.city}
-                    </span>
+                    <span className="block font-medium">{q.destination.city}</span>
                     <span className="block truncate text-sm text-muted-foreground">
-                      {q.destination.country} · {q.cheapest.airline.name}
+                      {q.destination.country}
                       {q.cheapest.outbound.stops === 0 ? " · direct" : ""}
                     </span>
                   </span>
-                  <span className="shrink-0 text-right">
-                    <span className="block text-lg font-semibold tabular-nums"><Price amount={q.cheapest.price} /></span>
-                    {q.cheapest.savingsPercent >= 10 && (
-                      <span className="block text-xs font-medium text-savings">−{q.cheapest.savingsPercent}%</span>
-                    )}
+                  <span className="shrink-0 font-semibold tabular-nums">
+                    <Price amount={q.cheapest.price} />
                   </span>
                 </Link>
               </li>
             ))}
           </ol>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Button asChild>
-              <Link href={`/explore?from=${origin}`}>
-                <Compass /> Explore every destination
-              </Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link href={buildSearchHref({ from: origin, extra: { sort: "cheapest" } })}>See all flights</Link>
-            </Button>
-          </div>
         </section>
 
-        {/* Differentiators */}
-        <section aria-labelledby="only-here">
-          <SectionHeader
-            size="sm"
-            id="only-here"
-            eyebrow="Only on SkyScout"
-            title="Fly further for less"
-            description="Tell us roughly when, or how much — we'll find the cheapest way to go."
-          />
-          <div className="grid gap-5 lg:grid-cols-2">
+        {/* Ways to save */}
+        <section aria-labelledby="ways-to-save">
+          <MinimalHeader id="ways-to-save" title="Two ways to pay less" subtitle="Be flexible on when — or on where." />
+          <div className="grid gap-4 md:grid-cols-2">
             {/* Flexible dates */}
-            <article className="flex flex-col rounded-3xl border bg-card p-5 sm:p-6">
-              <span className="flex size-11 items-center justify-center rounded-2xl bg-accent text-primary">
-                <CalendarRange className="size-5" aria-hidden="true" />
-              </span>
-              <h3 className="mt-4 text-lg font-semibold">Flexible dates? Find the cheapest days to fly.</h3>
+            <article className="flex flex-col rounded-2xl border p-5 sm:p-6">
+              <h3 className="font-semibold">Flexible dates</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Give us a travel window instead of fixed dates and we&apos;ll compare every departure and return
-                in it. Example: {airport.city} → {flexCity}, leaving any day in the next month, 5–7 nights:
+                Cheapest days to fly {airport.city} → {flexCity} in the next month (5–7 nights):
               </p>
-              {flexDates.length === 0 && (
-                <p className="mt-4 rounded-xl bg-muted px-3 py-2 text-sm text-muted-foreground">
-                  No recent fares for this example right now — try it with your own route and dates.
-                </p>
+              {flexDates.length === 0 ? (
+                <p className="mt-4 text-sm text-muted-foreground">No recent fares for this example — try your own dates.</p>
+              ) : (
+                <ul className="mt-4 divide-y">
+                  {flexDates.slice(0, 3).map((d) => (
+                    <li key={d.id}>
+                      <Link href={`/deals/${d.id}`} className="flex items-center justify-between py-2.5 text-sm hover:text-primary">
+                        <span>
+                          {formatDateRange(d.departureDate, d.returnDate)}
+                          <span className="text-muted-foreground"> · {d.nights} nights</span>
+                        </span>
+                        <span className="font-semibold tabular-nums">
+                          <Price amount={d.price} />
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
               )}
-              <ul className="mt-4 space-y-2">
-                {flexDates.slice(0, 3).map((d) => (
-                  <li key={d.id}>
-                    <Link
-                      href={`/deals/${d.id}`}
-                      className="flex items-center justify-between rounded-xl bg-muted px-3 py-2 text-sm transition hover:bg-accent"
-                    >
-                      <span className="font-medium">
-                        {formatDateRange(d.departureDate, d.returnDate)}
-                        <span className="font-normal text-muted-foreground"> · {d.nights} nights</span>
-                      </span>
-                      <span className="font-semibold tabular-nums">
-                        <Price amount={d.price} />
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
               {flexSaving > 0 && (
-                <p className="mt-3 text-sm">
-                  <span className="font-semibold text-savings">
-                    Save up to <Price amount={flexSaving} />
-                  </span>{" "}
-                  <span className="text-muted-foreground">versus the priciest dates in the same window.</span>
+                <p className="mt-3 text-sm text-savings">
+                  Up to <Price amount={flexSaving} /> less than the priciest dates.
                 </p>
               )}
-              <Link
-                href={flexHref}
-                className="mt-auto inline-flex items-center gap-1 pt-4 text-sm font-semibold text-primary hover:underline"
-              >
-                Search your own date range <ArrowRight className="size-4" aria-hidden="true" />
+              <Link href={flexHref} className="mt-auto inline-flex items-center gap-1 pt-5 text-sm font-medium text-primary hover:underline">
+                Search your date range <ArrowRight className="size-4" aria-hidden="true" />
               </Link>
             </article>
 
             {/* Fare budget */}
-            <article className="flex flex-col rounded-3xl border bg-card p-5 sm:p-6">
-              <span className="flex size-11 items-center justify-center rounded-2xl bg-sunrise-soft text-sunrise">
-                <Wallet className="size-5" aria-hidden="true" />
-              </span>
-              <h3 className="mt-4 text-lg font-semibold">
-                Where can a <Price amount={FARE_BUDGET} /> flight take you?
+            <article className="flex flex-col rounded-2xl border p-5 sm:p-6">
+              <h3 className="font-semibold">
+                Flights under <Price amount={FARE_BUDGET} />
               </h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                The cheapest return fares from {airport.city} right now, per person:
-              </p>
-              <ul className="mt-4 space-y-2">
+              <p className="mt-1 text-sm text-muted-foreground">Cheapest return fares from {airport.city} right now:</p>
+              <ul className="mt-4 divide-y">
                 {underBudget.slice(0, 3).map((q) => (
                   <li key={q.destination.code}>
-                    <Link
-                      href={`/deals/${q.cheapest.id}`}
-                      className="flex items-center justify-between rounded-xl bg-muted px-3 py-2 text-sm transition hover:bg-accent"
-                    >
-                      <span className="font-medium">
-                        {airport.city} → {q.destination.city}
-                      </span>
-                      <span className="tabular-nums">
-                        <span className="text-xs text-muted-foreground">from</span>{" "}
-                        <span className="font-semibold">
-                          <Price amount={q.cheapest.price} />
-                        </span>
+                    <Link href={`/deals/${q.cheapest.id}`} className="flex items-center justify-between py-2.5 text-sm hover:text-primary">
+                      <span>{q.destination.city}</span>
+                      <span className="font-semibold tabular-nums">
+                        <Price amount={q.cheapest.price} />
                       </span>
                     </Link>
                   </li>
@@ -253,45 +187,71 @@ export default async function HomePage() {
               </ul>
               <Link
                 href={`/explore?from=${origin}&max=${FARE_BUDGET}`}
-                className="mt-auto inline-flex items-center gap-1 pt-4 text-sm font-semibold text-primary hover:underline"
+                className="mt-auto inline-flex items-center gap-1 pt-5 text-sm font-medium text-primary hover:underline"
               >
-                See all {underBudget.length} destinations with flights under <Price amount={FARE_BUDGET} />{" "}
-                <ArrowRight className="size-4" aria-hidden="true" />
+                All {underBudget.length} destinations under <Price amount={FARE_BUDGET} /> <ArrowRight className="size-4" aria-hidden="true" />
               </Link>
             </article>
           </div>
         </section>
 
         {/* Price alerts */}
-        <section aria-labelledby="alerts-cta">
-          <div className="relative overflow-hidden rounded-3xl bg-foreground p-6 text-white sm:p-8">
-            <div className="absolute -top-16 -right-16 size-56 rounded-full bg-primary/40 blur-3xl" aria-hidden="true" />
-            <div className="absolute -bottom-20 -left-10 size-56 rounded-full bg-sunrise/30 blur-3xl" aria-hidden="true" />
-            <BellRing className="relative size-7 text-sunrise" aria-hidden="true" />
-            <h2 id="alerts-cta" className="relative mt-4 text-xl font-semibold tracking-tight sm:text-2xl">
-              Let the deal come to you
-            </h2>
-            <p className="relative mt-2 text-white/75">
-              “Notify me when {airport.city} → London drops below $350.” Set a target and we&apos;ll watch the fares.
-            </p>
-            <Button asChild variant="sunrise" size="lg" className="relative mt-5">
-              <Link href={`/alerts?from=${origin}&to=LHR&max=350`}>Create a price alert</Link>
-            </Button>
+        <section aria-labelledby="alerts-cta" className="flex flex-col items-start justify-between gap-4 rounded-2xl border p-5 sm:flex-row sm:items-center sm:p-6">
+          <div className="flex items-start gap-3">
+            <BellRing className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
+            <div>
+              <h2 id="alerts-cta" className="font-semibold">
+                Get a price alert
+              </h2>
+              <p className="text-sm text-muted-foreground">Set a target fare and we&apos;ll tell you when it drops.</p>
+            </div>
           </div>
+          <Button asChild variant="outline">
+            <Link href={`/alerts?from=${origin}&to=LHR&max=350`}>Create alert</Link>
+          </Button>
         </section>
-        </div>
       </div>
     </>
+  );
+}
+
+function MinimalHeader({
+  id,
+  title,
+  subtitle,
+  href,
+  linkLabel,
+}: {
+  id: string;
+  title: string;
+  subtitle?: string;
+  href?: string;
+  linkLabel?: string;
+}) {
+  return (
+    <div className="mb-5 flex items-end justify-between gap-4">
+      <div>
+        <h2 id={id} className="text-xl font-semibold tracking-tight">
+          {title}
+        </h2>
+        {subtitle && <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>}
+      </div>
+      {href && (
+        <Link href={href} className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-primary hover:underline">
+          {linkLabel} <ArrowRight className="size-4" aria-hidden="true" />
+        </Link>
+      )}
+    </div>
   );
 }
 
 function DestinationThumb({ code, photo, alt }: { code: string; photo?: Photo; alt: string }) {
   const art = DESTINATIONS.find((d) => d.airport === code)?.art;
   return (
-    <span className="relative size-14 shrink-0 overflow-hidden rounded-2xl bg-muted">
+    <span className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-muted">
       {photo ? (
         // eslint-disable-next-line @next/next/no-img-element -- served straight from Wikimedia's CDN
-        <img src={photo.src} alt={alt} loading="lazy" className="size-full object-cover transition-transform duration-300 group-hover:scale-110" />
+        <img src={photo.src} alt={alt} loading="lazy" className="size-full object-cover" />
       ) : art ? (
         <DestinationArt code={code} theme={art.theme} from={art.from} to={art.to} showCode={false} photo={false} className="size-full" />
       ) : null}
