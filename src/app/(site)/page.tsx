@@ -79,8 +79,8 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Price alerts */}
-      <section aria-labelledby="alerts-cta" className="-mb-24 border-t border-divider bg-card">
+      {/* Price alerts — overlaps the footer's top rule so no separator shows around the panel. */}
+      <section aria-labelledby="alerts-cta" className="relative z-10 -mb-[calc(6rem+1px)] bg-card">
         <div className="container-page py-12 sm:py-14">
           <div className="flex flex-col items-start justify-between gap-6 rounded-2xl bg-navy-hero px-6 py-8 text-white shadow-lift sm:flex-row sm:items-center sm:px-10">
             <div className="flex items-start gap-4">
