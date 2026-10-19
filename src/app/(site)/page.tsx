@@ -83,39 +83,44 @@ export default async function HomePage() {
       />
 
       {/* Search */}
-      <section aria-label="Search flights">
-        <div className="container-page pt-12 pb-10 text-center sm:pt-20 sm:pb-14">
-          <p className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+      <section aria-label="Search flights" className="bg-foreground text-white">
+        <div className="container-page pt-12 pb-12 text-center sm:pt-20 sm:pb-16">
+          <p className="inline-flex items-center gap-1.5 text-sm text-white/60">
             <Sparkle className="size-4 fill-brand text-brand" aria-hidden="true" /> SkyScout
           </p>
           <h1 className="mx-auto mt-3 max-w-3xl text-4xl font-bold tracking-tight text-balance sm:text-5xl">
             Fly when it&apos;s cheapest
           </h1>
-          <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+          <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-white/65 sm:text-base">
             Tell us your travel window and destination — we&apos;ll find the best-value days to go.
           </p>
-          <SearchBox className="mt-8 text-left" today={today} initial={{ from: origin }} />
+          <SearchBox className="mt-8 border-white/10 text-left text-foreground" today={today} initial={{ from: origin }} />
         </div>
       </section>
 
-      <div className="container-page space-y-14 pb-16 sm:space-y-16 sm:pb-20">
-        {/* Cheapest flights from your airport */}
-        <section aria-labelledby="from-airport">
-          <div className="mb-4 flex items-center justify-between gap-4">
-            <h2 id="from-airport" className="text-sm text-muted-foreground">
-              {cheapest.length} cheapest flights from {airport.city}
-            </h2>
-            <Link href={`/explore?from=${origin}`} className="text-sm font-medium hover:underline">
+      {/* Cheapest flights from your airport */}
+      <section aria-labelledby="from-airport" className="border-b bg-card">
+        <div className="container-page py-12 sm:py-14">
+          <div className="mb-5 flex items-end justify-between gap-4">
+            <div>
+              <h2 id="from-airport" className="text-lg font-semibold">
+                Cheapest flights from {airport.city}
+              </h2>
+              <p className="mt-0.5 text-xs text-muted-foreground">Return fares, lowest first · updated daily</p>
+            </div>
+            <Link href={`/explore?from=${origin}`} className="shrink-0 text-sm font-medium hover:underline">
               Explore all →
             </Link>
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {cheapest.map((q) => (
               <FareCard key={q.destination.code} quote={q} photo={photos[q.destination.code]} origin={airport.city} />
             ))}
           </div>
-        </section>
+        </div>
+      </section>
 
+      <div className="container-page space-y-14 py-12 sm:space-y-16 sm:py-16">
         {/* Ways to save */}
         <section aria-labelledby="ways-to-save">
           <MinimalHeader id="ways-to-save" title="Two ways to pay less" subtitle="Be flexible on when — or on where." />
@@ -209,38 +214,38 @@ function FareCard({ quote, photo, origin }: { quote: DestinationQuote; photo?: P
   return (
     <Link
       href={`/deals/${deal.id}`}
-      className="group block rounded-xl border bg-card transition hover:border-foreground/25"
+      className="group flex flex-col rounded-xl border bg-card transition hover:border-foreground/25"
     >
-      <div className="flex items-start gap-4 p-4 sm:p-5">
+      <div className="flex flex-1 items-start gap-3 p-3.5">
         <DestinationThumb code={quote.destination.code} photo={photo} alt={`${quote.destination.city}, ${quote.destination.country}`} />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-base font-semibold group-hover:underline">
+          <p className="truncate text-sm font-semibold group-hover:underline">
             {origin} → {quote.destination.city}
           </p>
-          <span className="mt-1 inline-block rounded-full border px-2 py-0.5 text-[11px] text-muted-foreground">
+          <span className="mt-1 inline-block max-w-full truncate rounded-full border px-2 py-0.5 text-[10px] text-muted-foreground">
             {quote.destination.country}
           </span>
-          <p className="mt-3 line-clamp-1 text-sm text-muted-foreground">
+          <p className="mt-2 line-clamp-1 text-xs text-muted-foreground">
             {deal.airline.name} · {deal.outbound.stops === 0 ? "direct" : `${deal.outbound.stops} stop${deal.outbound.stops > 1 ? "s" : ""}`} ·{" "}
             {Math.floor(minutes / 60)}h {minutes % 60}m
           </p>
         </div>
       </div>
-      <dl className="grid grid-cols-3 gap-2 border-t px-4 py-3 sm:px-5">
+      <dl className="grid grid-cols-3 gap-2 border-t px-3.5 py-2.5 text-sm">
         <div>
-          <dt className="text-[10px] uppercase tracking-wider text-muted-foreground">Fare (return)</dt>
+          <dt className="text-[9px] uppercase tracking-wider text-muted-foreground">Fare</dt>
           <dd className="mt-0.5 font-semibold tabular-nums">
             <Price amount={deal.price} />
           </dd>
         </div>
         <div>
-          <dt className="text-[10px] uppercase tracking-wider text-muted-foreground">Typical</dt>
+          <dt className="text-[9px] uppercase tracking-wider text-muted-foreground">Typical</dt>
           <dd className="mt-0.5 text-muted-foreground tabular-nums line-through decoration-muted-foreground/50">
             <Price amount={deal.typicalPrice} />
           </dd>
         </div>
         <div>
-          <dt className="text-[10px] uppercase tracking-wider text-muted-foreground">You save</dt>
+          <dt className="text-[9px] uppercase tracking-wider text-muted-foreground">Save</dt>
           <dd className="mt-0.5 font-semibold tabular-nums text-savings">{deal.savingsPercent}%</dd>
         </div>
       </dl>
@@ -281,7 +286,7 @@ function MinimalHeader({
 function DestinationThumb({ code, photo, alt }: { code: string; photo?: Photo; alt: string }) {
   const art = DESTINATIONS.find((d) => d.airport === code)?.art;
   return (
-    <span className="relative size-12 shrink-0 overflow-hidden rounded-xl border bg-muted">
+    <span className="relative size-10 shrink-0 overflow-hidden rounded-lg border bg-muted">
       {photo ? (
         // eslint-disable-next-line @next/next/no-img-element -- served straight from Wikimedia's CDN
         <img src={photo.src} alt={alt} loading="lazy" className="size-full object-cover" />
