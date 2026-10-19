@@ -8,30 +8,30 @@
  */
 :root {
   --radius: 0.75rem;
-  --background: #f7f7f5;
-  --foreground: #141414;
+  --background: #f8fafc;
+  --foreground: #0f172a;
   --card: #ffffff;
-  --card-foreground: #141414;
+  --card-foreground: #0f172a;
   --popover: #ffffff;
-  --popover-foreground: #141414;
-  --primary: #141414;
+  --popover-foreground: #0f172a;
+  --primary: #3256f0;
   --primary-foreground: #ffffff;
-  --secondary: #efefeb;
-  --secondary-foreground: #141414;
-  --muted: #f1f1ee;
-  --muted-foreground: #6b6b66;
-  --accent: #efefeb;
-  --accent-foreground: #141414;
+  --secondary: #f1f4f9;
+  --secondary-foreground: #0f172a;
+  --muted: #f1f4f9;
+  --muted-foreground: #64748b;
+  --accent: #edf2ff;
+  --accent-foreground: #2443d6;
   --destructive: #dc2626;
-  --border: #e6e6e1;
-  --input: #e1e1dc;
-  --ring: #141414;
+  --border: #e4e8f0;
+  --input: #dfe4ee;
+  --ring: #3256f0;
   --sunrise: #ff6a3d;
   --sunrise-soft: #fff1ec;
   --savings: #0b8a5f;
   --savings-soft: #e6f6ef;
-  --sky: #efefeb;
-  --brand: #5b5bd6;
+  --sky: #eaf1ff;
+  --brand: #3256f0;
 }
 
 @theme inline {
@@ -119,6 +119,15 @@
 /* Soft horizon gradient used behind hero sections. */
 @utility bg-horizon {
   background: var(--background);
+}
+
+/* Soft daytime sky for the homepage hero: blue fading to white, with faint clouds. */
+@utility bg-sky-hero {
+  background:
+    radial-gradient(420px 120px at 82% 18%, rgb(255 255 255 / 0.85), transparent 70%),
+    radial-gradient(520px 140px at 70% 42%, rgb(255 255 255 / 0.7), transparent 70%),
+    radial-gradient(360px 110px at 95% 55%, rgb(255 255 255 / 0.75), transparent 70%),
+    linear-gradient(180deg, #dbe8ff 0%, #eaf1ff 45%, #f8fafc 100%);
 }
 
 @keyframes dash-flow {

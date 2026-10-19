@@ -1,12 +1,11 @@
 import Link from "next/link";
 import { Price } from "@/components/common/price";
-import { ArrowRight, BellRing, Sparkle } from "lucide-react";
+import { ArrowRight, BellRing, Compass, Plane, ShieldCheck, Sparkles, Tag } from "lucide-react";
 import { JsonLd } from "@/components/common/json-ld";
 import { DestinationArt } from "@/components/destinations/destination-art";
 import { DESTINATIONS } from "@/lib/catalog/destinations";
 import type { DestinationQuote } from "@/lib/flights/types";
 import { SearchBox } from "@/components/search/search-box";
-import { Button } from "@/components/ui/button";
 import { getAirport } from "@/lib/catalog/airports";
 import { addDays, todayIso } from "@/lib/dates";
 import { makeSearchParams } from "@/lib/flights/params";
@@ -83,41 +82,65 @@ export default async function HomePage() {
       />
 
       {/* Search */}
-      <section aria-label="Search flights" className="bg-foreground text-white">
-        <div className="container-page pt-12 pb-12 text-center sm:pt-20 sm:pb-16">
-          <p className="inline-flex items-center gap-1.5 text-sm text-white/60">
-            <Sparkle className="size-4 fill-brand text-brand" aria-hidden="true" /> SkyScout
+      <section aria-label="Search flights" className="bg-sky-hero">
+        <div className="container-page pt-10 pb-12 sm:pt-16 sm:pb-16">
+          <p className="inline-flex items-center gap-1.5 rounded-md bg-card/80 px-2.5 py-1 text-xs font-medium text-primary shadow-sm">
+            <Plane className="size-3.5" aria-hidden="true" /> Smarter flights. Better prices.
           </p>
-          <h1 className="mx-auto mt-3 max-w-3xl text-4xl font-bold tracking-tight text-balance sm:text-5xl">
-            Fly when it&apos;s cheapest
+          <h1 className="mt-4 max-w-3xl text-4xl font-bold tracking-tight text-balance sm:text-5xl">
+            Fly when it&apos;s <span className="text-primary">cheapest</span>
           </h1>
-          <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-white/65 sm:text-base">
+          <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
             Tell us your travel window and destination — we&apos;ll find the best-value days to go.
           </p>
-          <SearchBox className="mt-8 border-white/10 text-left text-foreground" today={today} initial={{ from: origin }} />
+          <SearchBox className="mt-8 border-white shadow-lift" today={today} initial={{ from: origin }} />
         </div>
       </section>
 
       {/* Cheapest flights from your airport */}
-      <section aria-labelledby="from-airport" className="border-b bg-card">
-        <div className="container-page py-12 sm:py-14">
+      <section aria-labelledby="from-airport">
+        <div className="container-page pt-12 pb-10 sm:pt-14">
           <div className="mb-5 flex items-end justify-between gap-4">
             <div>
-              <h2 id="from-airport" className="text-lg font-semibold">
-                Cheapest flights from {airport.city}
+              <h2 id="from-airport" className="flex items-center gap-2 text-lg font-semibold">
+                <Tag className="size-4 text-primary" aria-hidden="true" /> Cheapest flights from {airport.city}
               </h2>
               <p className="mt-0.5 text-xs text-muted-foreground">Return fares, lowest first · updated daily</p>
             </div>
-            <Link href={`/explore?from=${origin}`} className="shrink-0 text-sm font-medium hover:underline">
+            <Link href={`/explore?from=${origin}`} className="shrink-0 text-sm font-medium text-primary hover:underline">
               Explore all →
             </Link>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {cheapest.map((q) => (
               <FareCard key={q.destination.code} quote={q} photo={photos[q.destination.code]} origin={airport.city} />
             ))}
           </div>
         </div>
+      </section>
+
+      {/* Features */}
+      <section aria-label="Why SkyScout" className="container-page">
+        <ul className="grid gap-4 rounded-2xl bg-accent/70 p-5 sm:grid-cols-2 sm:p-6 lg:grid-cols-4">
+          {[
+            { icon: Sparkles, title: "Flexible dates", text: "See the best prices across your travel window.", href: flexHref },
+            { icon: BellRing, title: "Price alerts", text: "Get notified when fares drop for your trip.", href: `/alerts?from=${origin}` },
+            { icon: ShieldCheck, title: "Recent fares", text: "Prices found in the last few days by airline and travel partners.", href: `/flights?from=${origin}&to=anywhere` },
+            { icon: Compass, title: "More destinations", text: "Search anywhere in the world with ease.", href: "/destinations" },
+          ].map(({ icon: Icon, title, text, href }) => (
+            <li key={title}>
+              <Link href={href} className="group flex items-start gap-3">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-card text-primary shadow-sm">
+                  <Icon className="size-4" aria-hidden="true" />
+                </span>
+                <span>
+                  <span className="block text-sm font-semibold group-hover:text-primary">{title}</span>
+                  <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">{text}</span>
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
       </section>
 
       <div className="container-page space-y-14 py-12 sm:space-y-16 sm:py-16">
@@ -188,21 +211,6 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* Price alerts */}
-        <section aria-labelledby="alerts-cta" className="flex flex-col items-start justify-between gap-4 rounded-xl border bg-card p-5 sm:flex-row sm:items-center sm:p-6">
-          <div className="flex items-start gap-3">
-            <BellRing className="mt-0.5 size-5 shrink-0 text-brand" aria-hidden="true" />
-            <div>
-              <h2 id="alerts-cta" className="font-semibold">
-                Get a price alert
-              </h2>
-              <p className="text-sm text-muted-foreground">Set a target fare and we&apos;ll tell you when it drops.</p>
-            </div>
-          </div>
-          <Button asChild>
-            <Link href={`/alerts?from=${origin}&to=LHR&max=350`}>+ Create alert</Link>
-          </Button>
-        </section>
       </div>
     </>
   );
@@ -211,44 +219,42 @@ export default async function HomePage() {
 function FareCard({ quote, photo, origin }: { quote: DestinationQuote; photo?: Photo; origin: string }) {
   const deal = quote.cheapest;
   const minutes = deal.outbound.durationMinutes;
+  const stops = deal.outbound.stops === 0 ? "direct" : `${deal.outbound.stops} stop${deal.outbound.stops > 1 ? "s" : ""}`;
   return (
     <Link
       href={`/deals/${deal.id}`}
-      className="group flex flex-col rounded-xl border bg-card transition hover:border-foreground/25"
+      className="group flex flex-col overflow-hidden rounded-xl border bg-card shadow-card transition hover:-translate-y-0.5 hover:shadow-lift"
     >
-      <div className="flex flex-1 items-start gap-3 p-3.5">
-        <DestinationThumb code={quote.destination.code} photo={photo} alt={`${quote.destination.city}, ${quote.destination.country}`} />
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold group-hover:underline">
+      <DestinationCover code={quote.destination.code} photo={photo} alt={`${quote.destination.city}, ${quote.destination.country}`} />
+      <div className="flex flex-1 flex-col p-3.5">
+        <p className="flex items-center gap-1.5 text-sm font-semibold">
+          <Plane className="size-3.5 shrink-0 text-primary" aria-hidden="true" />
+          <span className="truncate">
             {origin} → {quote.destination.city}
-          </p>
-          <span className="mt-1 inline-block max-w-full truncate rounded-full border px-2 py-0.5 text-[10px] text-muted-foreground">
-            {quote.destination.country}
           </span>
-          <p className="mt-2 line-clamp-1 text-xs text-muted-foreground">
-            {deal.airline.name} · {deal.outbound.stops === 0 ? "direct" : `${deal.outbound.stops} stop${deal.outbound.stops > 1 ? "s" : ""}`} ·{" "}
-            {Math.floor(minutes / 60)}h {minutes % 60}m
-          </p>
+        </p>
+        <p className="mt-1 truncate text-xs text-muted-foreground">
+          {quote.destination.country} · {quote.destination.code}
+        </p>
+        <p className="mt-0.5 truncate text-xs text-muted-foreground">
+          {deal.airline.name} · {stops} · {Math.floor(minutes / 60)}h {minutes % 60}m
+        </p>
+        <div className="mt-auto flex items-center gap-2 pt-3">
+          <span className="text-base font-bold tabular-nums">
+            <Price amount={deal.price} />
+          </span>
+          {deal.typicalPrice > deal.price && (
+            <span className="text-xs text-muted-foreground line-through tabular-nums">
+              <Price amount={deal.typicalPrice} />
+            </span>
+          )}
+          {deal.savingsPercent >= 5 && (
+            <span className="ml-auto rounded-full bg-savings-soft px-2 py-0.5 text-[11px] font-semibold text-savings">
+              {deal.savingsPercent}%
+            </span>
+          )}
         </div>
       </div>
-      <dl className="grid grid-cols-3 gap-2 border-t px-3.5 py-2.5 text-sm">
-        <div>
-          <dt className="text-[9px] uppercase tracking-wider text-muted-foreground">Fare</dt>
-          <dd className="mt-0.5 font-semibold tabular-nums">
-            <Price amount={deal.price} />
-          </dd>
-        </div>
-        <div>
-          <dt className="text-[9px] uppercase tracking-wider text-muted-foreground">Typical</dt>
-          <dd className="mt-0.5 text-muted-foreground tabular-nums line-through decoration-muted-foreground/50">
-            <Price amount={deal.typicalPrice} />
-          </dd>
-        </div>
-        <div>
-          <dt className="text-[9px] uppercase tracking-wider text-muted-foreground">Save</dt>
-          <dd className="mt-0.5 font-semibold tabular-nums text-savings">{deal.savingsPercent}%</dd>
-        </div>
-      </dl>
     </Link>
   );
 }
@@ -283,13 +289,13 @@ function MinimalHeader({
   );
 }
 
-function DestinationThumb({ code, photo, alt }: { code: string; photo?: Photo; alt: string }) {
+function DestinationCover({ code, photo, alt }: { code: string; photo?: Photo; alt: string }) {
   const art = DESTINATIONS.find((d) => d.airport === code)?.art;
   return (
-    <span className="relative size-10 shrink-0 overflow-hidden rounded-lg border bg-muted">
+    <span className="relative block aspect-[16/7] overflow-hidden bg-muted">
       {photo ? (
         // eslint-disable-next-line @next/next/no-img-element -- served straight from Wikimedia's CDN
-        <img src={photo.src} alt={alt} loading="lazy" className="size-full object-cover" />
+        <img src={photo.src} alt={alt} loading="lazy" className="size-full object-cover transition-transform duration-500 group-hover:scale-105" />
       ) : art ? (
         <DestinationArt code={code} theme={art.theme} from={art.from} to={art.to} showCode={false} photo={false} className="size-full" />
       ) : null}
