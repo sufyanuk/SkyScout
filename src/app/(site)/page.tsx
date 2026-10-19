@@ -1,18 +1,14 @@
 import Link from "next/link";
 import { Price } from "@/components/common/price";
-import { ArrowRight, BellRing, Sparkle } from "lucide-react";
+import { ArrowRight, BellRing, CalendarRange, Coins, Globe2, ShieldCheck, Sparkle, TrendingDown } from "lucide-react";
 import { JsonLd } from "@/components/common/json-ld";
 import { DestinationArt } from "@/components/destinations/destination-art";
 import { DESTINATIONS } from "@/lib/catalog/destinations";
 import type { DestinationQuote } from "@/lib/flights/types";
 import { SearchBox } from "@/components/search/search-box";
-import { Button } from "@/components/ui/button";
 import { getAirport } from "@/lib/catalog/airports";
-import { addDays, todayIso } from "@/lib/dates";
-import { makeSearchParams } from "@/lib/flights/params";
-import { formatDateRange } from "@/lib/format";
+import { todayIso } from "@/lib/dates";
 import { getFlightProvider } from "@/lib/flights";
-import { buildSearchHref } from "@/lib/search-params";
 import { getDestinationPhotos, type Photo } from "@/lib/photos";
 import { getHomeAirport } from "@/lib/services/preferences";
 import { absoluteUrl, SITE } from "@/lib/site";
@@ -23,45 +19,7 @@ export default async function HomePage() {
   const provider = getFlightProvider();
   const today = todayIso();
 
-  /** Flight budget for the "Where can … take you?" card; must match an Explore price filter. */
-  const FARE_BUDGET = 300;
-  // Flexible-dates example: one route, any departure in the next 30 days, 5–7 nights.
-  const flexTo = origin === "LHR" ? "CDG" : "LHR";
-  const flexWindow = { start: addDays(today, 7), end: addDays(today, 37) };
-  const [quotes, flexResult] = await Promise.all([
-    provider.exploreDestinations(origin),
-    provider.searchFlights(
-      makeSearchParams({
-        from: origin,
-        to: flexTo,
-        when: "range",
-        departure: flexWindow.start,
-        departureEnd: flexWindow.end,
-        tripLength: "custom",
-        minNights: 5,
-        maxNights: 7,
-      }),
-      { sort: "cheapest" },
-    ),
-  ]);
-  // Cheapest fare for each distinct pair of dates, then the three best.
-  const byDates = new Map<string, (typeof flexResult.deals)[number]>();
-  for (const d of flexResult.deals) {
-    const key = `${d.departureDate}-${d.returnDate}`;
-    if (!byDates.has(key) || d.price < byDates.get(key)!.price) byDates.set(key, d);
-  }
-  const flexDates = [...byDates.values()].sort((a, b) => a.price - b.price);
-  const flexSaving = flexDates.length > 1 ? flexDates[flexDates.length - 1].price - flexDates[0].price : 0;
-  const flexCity = getAirport(flexTo)!.city;
-  const flexHref = buildSearchHref({
-    from: origin,
-    to: flexTo,
-    departure: flexWindow.start,
-    when: "range",
-    extra: { until: flexWindow.end, minNights: 5, maxNights: 7, sort: "cheapest" },
-  });
-
-  const underBudget = quotes.filter((q) => q.cheapest.price <= FARE_BUDGET).sort((a, b) => a.cheapest.price - b.cheapest.price);
+  const quotes = await provider.exploreDestinations(origin);
   const cheapest = quotes.slice(0, 8);
   const photos = await getDestinationPhotos(cheapest.map((q) => q.destination.code));
 
@@ -83,7 +41,7 @@ export default async function HomePage() {
       />
 
       {/* Search */}
-      <section aria-label="Search flights" className="bg-navy-hero text-white">
+      <section aria-label="Search flights" className="bg-charcoal-hero text-white">
         <div className="container-page pt-12 pb-12 text-center sm:pt-20 sm:pb-16">
           <p className="inline-flex items-center gap-1.5 text-sm text-white/60">
             <Sparkle className="size-4 fill-brand text-brand" aria-hidden="true" /> SkyScout
@@ -100,13 +58,14 @@ export default async function HomePage() {
 
       {/* Cheapest flights from your airport */}
       <section aria-labelledby="from-airport" className="border-b bg-card">
-        <div className="container-page py-12 sm:py-14">
-          <div className="mb-5 flex items-end justify-between gap-4">
+        <div className="container-page py-14 sm:py-20">
+          <div className="mb-8 flex items-end justify-between gap-4">
             <div>
-              <h2 id="from-airport" className="text-lg font-semibold">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Deals from your airport</p>
+              <h2 id="from-airport" className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
                 Cheapest flights from {airport.city}
               </h2>
-              <p className="mt-0.5 text-xs text-muted-foreground">Return fares, lowest first · updated daily</p>
+              <p className="mt-2 text-sm text-muted-foreground">Return fares, lowest first · updated daily</p>
             </div>
             <Link href={`/explore?from=${origin}`} className="shrink-0 text-sm font-medium hover:underline">
               Explore all →
@@ -120,93 +79,99 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <div className="container-page space-y-14 py-12 sm:space-y-16 sm:py-16">
-        {/* Ways to save */}
-        <section aria-labelledby="ways-to-save">
-          <MinimalHeader id="ways-to-save" title="Two ways to pay less" subtitle="Be flexible on when — or on where." />
-          <div className="grid gap-4 md:grid-cols-2">
-            {/* Flexible dates */}
-            <article className="flex flex-col rounded-xl border bg-card p-5 sm:p-6">
-              <h3 className="font-semibold">Flexible dates</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Cheapest days to fly {airport.city} → {flexCity} in the next month (5–7 nights):
-              </p>
-              {flexDates.length === 0 ? (
-                <p className="mt-4 text-sm text-muted-foreground">No recent fares for this example — try your own dates.</p>
-              ) : (
-                <ul className="mt-4 divide-y">
-                  {flexDates.slice(0, 3).map((d) => (
-                    <li key={d.id}>
-                      <Link href={`/deals/${d.id}`} className="flex items-center justify-between py-2.5 text-sm hover:text-primary">
-                        <span>
-                          {formatDateRange(d.departureDate, d.returnDate)}
-                          <span className="text-muted-foreground"> · {d.nights} nights</span>
-                        </span>
-                        <span className="font-semibold tabular-nums">
-                          <Price amount={d.price} />
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {flexSaving > 0 && (
-                <p className="mt-3 text-sm text-savings">
-                  Up to <Price amount={flexSaving} /> less than the priciest dates.
-                </p>
-              )}
-              <Link href={flexHref} className="mt-auto inline-flex items-center gap-1 pt-5 text-sm font-medium text-primary hover:underline">
-                Search your date range <ArrowRight className="size-4" aria-hidden="true" />
-              </Link>
-            </article>
-
-            {/* Fare budget */}
-            <article className="flex flex-col rounded-xl border bg-card p-5 sm:p-6">
-              <h3 className="font-semibold">
-                Flights under <Price amount={FARE_BUDGET} />
-              </h3>
-              <p className="mt-1 text-sm text-muted-foreground">Cheapest return fares from {airport.city} right now:</p>
-              <ul className="mt-4 divide-y">
-                {underBudget.slice(0, 3).map((q) => (
-                  <li key={q.destination.code}>
-                    <Link href={`/deals/${q.cheapest.id}`} className="flex items-center justify-between py-2.5 text-sm hover:text-primary">
-                      <span>{q.destination.city}</span>
-                      <span className="font-semibold tabular-nums">
-                        <Price amount={q.cheapest.price} />
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href={`/explore?from=${origin}&max=${FARE_BUDGET}`}
-                className="mt-auto inline-flex items-center gap-1 pt-5 text-sm font-medium text-primary hover:underline"
-              >
-                All {underBudget.length} destinations under <Price amount={FARE_BUDGET} /> <ArrowRight className="size-4" aria-hidden="true" />
-              </Link>
-            </article>
+      {/* Why SkyScout */}
+      <section aria-labelledby="why-skyscout" className="border-b bg-background">
+        <div className="container-page grid gap-10 py-14 sm:py-20 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,2fr)] lg:gap-14">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Why SkyScout</p>
+            <h2 id="why-skyscout" className="mt-3 text-2xl font-bold tracking-tight text-balance sm:text-3xl">
+              Built to find you the lowest fare — not to sell you one.
+            </h2>
+            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+              We compare fares across your whole travel window and show how each one stacks up against what the route
+              usually costs. Free to use, no sign-up needed to search.
+            </p>
+            <Link
+              href={`/explore?from=${origin}`}
+              className="mt-6 inline-flex h-10 items-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
+            >
+              Start exploring <ArrowRight className="size-4" aria-hidden="true" />
+            </Link>
           </div>
-        </section>
+          <ul className="grid gap-px overflow-hidden rounded-2xl border bg-border sm:grid-cols-2 lg:grid-cols-3">
+            {BENEFITS.map(({ icon: Icon, title, text }) => (
+              <li key={title} className="bg-card p-6">
+                <span className="flex size-10 items-center justify-center rounded-lg bg-accent text-primary">
+                  <Icon className="size-5" aria-hidden="true" />
+                </span>
+                <h3 className="mt-4 text-sm font-semibold">{title}</h3>
+                <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{text}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
 
-        {/* Price alerts */}
-        <section aria-labelledby="alerts-cta" className="flex flex-col items-start justify-between gap-4 rounded-xl border bg-card p-5 sm:flex-row sm:items-center sm:p-6">
-          <div className="flex items-start gap-3">
-            <BellRing className="mt-0.5 size-5 shrink-0 text-brand" aria-hidden="true" />
-            <div>
-              <h2 id="alerts-cta" className="font-semibold">
-                Get a price alert
-              </h2>
-              <p className="text-sm text-muted-foreground">Set a target fare and we&apos;ll tell you when it drops.</p>
+      {/* Price alerts */}
+      <section aria-labelledby="alerts-cta" className="-mb-24 bg-card">
+        <div className="container-page py-12 sm:py-14">
+          <div className="flex flex-col items-start justify-between gap-6 rounded-2xl bg-charcoal-hero px-6 py-8 text-white sm:flex-row sm:items-center sm:px-10">
+            <div className="flex items-start gap-4">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white/10">
+                <BellRing className="size-5" aria-hidden="true" />
+              </span>
+              <div>
+                <h2 id="alerts-cta" className="text-lg font-semibold">
+                  Not ready to book?
+                </h2>
+                <p className="mt-1 text-sm text-white/70">Set a target fare and we&apos;ll tell you when it drops.</p>
+              </div>
             </div>
+            <Link
+              href={`/alerts?from=${origin}&to=LHR&max=350`}
+              className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-white px-6 text-sm font-semibold text-foreground transition hover:bg-white/90"
+            >
+              Create a price alert <ArrowRight className="size-4" aria-hidden="true" />
+            </Link>
           </div>
-          <Button asChild>
-            <Link href={`/alerts?from=${origin}&to=LHR&max=350`}>+ Create alert</Link>
-          </Button>
-        </section>
-      </div>
+        </div>
+      </section>
     </>
   );
 }
+
+const BENEFITS = [
+  {
+    icon: CalendarRange,
+    title: "Flexible-date search",
+    text: "Give a departure and return window; we compare every day in it to find the cheapest combination.",
+  },
+  {
+    icon: TrendingDown,
+    title: "Know a real deal",
+    text: "Every fare is compared with what the route usually costs, so you see the saving at a glance.",
+  },
+  {
+    icon: Globe2,
+    title: "Search whole regions",
+    text: "Fly from a country or to a region — say, UAE to Europe — across every airport at once.",
+  },
+  {
+    icon: BellRing,
+    title: "Price alerts",
+    text: "Set a target and we watch the fares for you, so you don't have to keep checking.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "No booking fees from us",
+    text: "SkyScout is free. You book directly with trusted travel partners at the price shown there.",
+  },
+  {
+    icon: Coins,
+    title: "Your currency",
+    text: "See every price in your own currency — over 20 to choose from.",
+  },
+] as const;
 
 function FareCard({ quote, photo, origin }: { quote: DestinationQuote; photo?: Photo; origin: string }) {
   const deal = quote.cheapest;
@@ -250,36 +215,6 @@ function FareCard({ quote, photo, origin }: { quote: DestinationQuote; photo?: P
         </div>
       </dl>
     </Link>
-  );
-}
-
-function MinimalHeader({
-  id,
-  title,
-  subtitle,
-  href,
-  linkLabel,
-}: {
-  id: string;
-  title: string;
-  subtitle?: string;
-  href?: string;
-  linkLabel?: string;
-}) {
-  return (
-    <div className="mb-5 flex items-end justify-between gap-4">
-      <div>
-        <h2 id={id} className="text-xl font-semibold tracking-tight">
-          {title}
-        </h2>
-        {subtitle && <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>}
-      </div>
-      {href && (
-        <Link href={href} className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-primary hover:underline">
-          {linkLabel} <ArrowRight className="size-4" aria-hidden="true" />
-        </Link>
-      )}
-    </div>
   );
 }
 

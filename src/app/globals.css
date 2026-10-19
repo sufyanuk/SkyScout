@@ -126,6 +126,13 @@
     linear-gradient(180deg, #0d1b3e 0%, #10224d 100%);
 }
 
+/* Modern dark charcoal for the homepage search section and dark panels. */
+@utility bg-charcoal-hero {
+  background:
+    radial-gradient(900px 380px at 50% -25%, rgb(255 255 255 / 0.08), transparent 65%),
+    linear-gradient(180deg, #1c1f24 0%, #24272d 100%);
+}
+
 @utility bg-horizon {
   background: var(--background);
 }
