@@ -35,19 +35,13 @@ const monthTitle = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", month: "s
 const monthDay = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "short", day: "numeric" });
 const fullLabel = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
-function ordinal(n: number) {
-  const s = ["th", "st", "nd", "rd"];
-  const v = n % 100;
-  return `${n}${s[(v - 20) % 10] ?? s[v] ?? s[0]}`;
-}
-
-/** "Oct 8th – Nov 6th, 2026" */
+/** "Oct 8 – Nov 6"; the year is shown only when the range crosses into a new year. */
 export function formatRange(range: DateRange): string {
   const a = parseIsoDate(range.start);
   const b = parseIsoDate(range.end);
-  const part = (d: Date) => `${monthDay.format(d).split(" ")[0]} ${ordinal(d.getUTCDate())}`;
-  const year = b.getUTCFullYear();
-  return range.start === range.end ? `${part(a)}, ${year}` : `${part(a)} – ${part(b)}, ${year}`;
+  const crossesYear = a.getUTCFullYear() !== b.getUTCFullYear();
+  const part = (d: Date) => `${monthDay.format(d)}${crossesYear ? ` ’${String(d.getUTCFullYear()).slice(2)}` : ""}`;
+  return range.start === range.end ? part(a) : `${part(a)} – ${part(b)}`;
 }
 
 function presetsFor(today: string): { label: string; range: () => DateRange }[] {

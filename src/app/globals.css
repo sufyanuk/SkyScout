@@ -8,33 +8,34 @@
  */
 :root {
   --radius: 0.75rem;
-  --background: #ffffff;
-  --foreground: #0b1324;
+  --background: #f7f7f5;
+  --foreground: #141414;
   --card: #ffffff;
-  --card-foreground: #0b1324;
+  --card-foreground: #141414;
   --popover: #ffffff;
-  --popover-foreground: #0b1324;
-  --primary: #2348f0;
+  --popover-foreground: #141414;
+  --primary: #141414;
   --primary-foreground: #ffffff;
-  --secondary: #f4f5f7;
-  --secondary-foreground: #0b1324;
-  --muted: #f4f5f7;
-  --muted-foreground: #5d6679;
-  --accent: #f1f4ff;
-  --accent-foreground: #1b37c4;
+  --secondary: #efefeb;
+  --secondary-foreground: #141414;
+  --muted: #f1f1ee;
+  --muted-foreground: #6b6b66;
+  --accent: #efefeb;
+  --accent-foreground: #141414;
   --destructive: #dc2626;
-  --border: #e7e9ee;
-  --input: #e1e4ea;
-  --ring: #2348f0;
+  --border: #e6e6e1;
+  --input: #e1e1dc;
+  --ring: #141414;
   --sunrise: #ff6a3d;
   --sunrise-soft: #fff1ec;
   --savings: #0b8a5f;
   --savings-soft: #e6f6ef;
-  --sky: #e8efff;
+  --sky: #efefeb;
+  --brand: #5b5bd6;
 }
 
 @theme inline {
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
   --font-display: var(--font-instrument-serif), ui-serif, Georgia, serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
@@ -61,6 +62,7 @@
   --color-savings: var(--savings);
   --color-savings-soft: var(--savings-soft);
   --color-sky: var(--sky);
+  --color-brand: var(--brand);
 
   --radius-sm: calc(var(--radius) - 6px);
   --radius-md: calc(var(--radius) - 4px);
