@@ -146,6 +146,11 @@
     linear-gradient(180deg, #9fb8de 0%, #e9d8cf 100%);
 }
 
+/* Footer: sky blue fading to sunset gold, echoing the hero photo. */
+@utility bg-sky-gold {
+  background: linear-gradient(100deg, #b7d0ee 0%, #d6e2ee 45%, #f1dcb4 75%, #f2c97f 100%);
+}
+
 /* Cards that gently zoom on hover. */
 @utility card-zoom {
   transition:
