@@ -82,21 +82,21 @@ export default async function HomePage() {
       {/* Price alerts */}
       <section aria-labelledby="alerts-cta" className="-mb-24 border-t border-divider bg-card">
         <div className="container-page py-12 sm:py-14">
-          <div className="flex flex-col items-start justify-between gap-6 rounded-2xl border border-divider bg-card px-6 py-8 sm:flex-row sm:items-center sm:px-10">
+          <div className="flex flex-col items-start justify-between gap-6 rounded-2xl bg-navy-hero px-6 py-8 text-white shadow-lift sm:flex-row sm:items-center sm:px-10">
             <div className="flex items-start gap-4">
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white/10">
                 <BellRing className="size-5" aria-hidden="true" />
               </span>
               <div>
                 <h2 id="alerts-cta" className="text-lg font-semibold">
                   Not ready to book?
                 </h2>
-                <p className="mt-1 text-sm text-muted-foreground">Set a target fare and we&apos;ll tell you when it drops.</p>
+                <p className="mt-1 text-sm text-white/70">Set a target fare and we&apos;ll tell you when it drops.</p>
               </div>
             </div>
             <Link
               href={`/alerts?from=${origin}&to=LHR&max=350`}
-              className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
+              className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-white px-6 text-sm font-semibold text-navy transition hover:bg-white/90"
             >
               Create a price alert <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
