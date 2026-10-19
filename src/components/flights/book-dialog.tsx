@@ -60,7 +60,7 @@ export function BookDialog({ summary, provider, bookingUrl, label = "Search this
     return (
       <Button asChild size={size} variant="sunrise" className={className}>
         <a href={bookingUrl} target="_blank" rel="sponsored noopener noreferrer">
-          Book on Aviasales <ExternalLink className="size-5" aria-hidden="true" />
+          {provider === "ignav" ? "Book this flight" : "Book on Aviasales"} <ExternalLink className="size-5" aria-hidden="true" />
         </a>
       </Button>
     );

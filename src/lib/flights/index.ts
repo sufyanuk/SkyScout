@@ -1,5 +1,6 @@
 import "server-only";
 import type { FlightSearchProvider } from "./provider";
+import { IgnavProvider, ignavConfigured } from "./ignav/ignav-provider";
 import { MockFlightProvider } from "./mock/mock-provider";
 import { RealFlightProvider } from "./real-provider";
 import { TravelpayoutsProvider, travelpayoutsConfigured } from "./travelpayouts/travelpayouts-provider";
@@ -8,6 +9,8 @@ let instance: FlightSearchProvider | undefined;
 
 /**
  * Returns the configured flight-data provider:
+ *  - FLIGHT_PROVIDER=ignav + IGNAV_API_KEY → live Ignav fares for route searches, on top of
+ *    Travelpayouts (when TRAVELPAYOUTS_TOKEN is set) or demo data for everything else
  *  - FLIGHT_PROVIDER=travelpayouts + TRAVELPAYOUTS_TOKEN → real cached fares from Aviasales
  *  - FLIGHT_PROVIDER=live → the RealFlightProvider placeholder (when its credentials exist)
  *  - anything else → the mock provider (demo data)
@@ -15,6 +18,13 @@ let instance: FlightSearchProvider | undefined;
 export function getFlightProvider(): FlightSearchProvider {
   if (instance) return instance;
   const wanted = process.env.FLIGHT_PROVIDER ?? "mock";
+  if (wanted === "ignav") {
+    if (ignavConfigured()) {
+      instance = new IgnavProvider(travelpayoutsConfigured() ? new TravelpayoutsProvider() : new MockFlightProvider());
+      return instance;
+    }
+    console.warn("[flights] FLIGHT_PROVIDER=ignav but IGNAV_API_KEY is missing — using mock data.");
+  }
   if (wanted === "travelpayouts") {
     if (travelpayoutsConfigured()) {
       instance = new TravelpayoutsProvider();

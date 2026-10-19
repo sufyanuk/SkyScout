@@ -173,6 +173,22 @@ How it behaves:
 - If the API errors (bad token, rate limit, outage), SkyScout logs a warning and falls back to demo data, so pages never break.
 - Responses are cached for 30 minutes to stay within rate limits.
 
+### Ignav — live fares
+
+[Ignav](https://ignav.com/docs) is a live flight-price API (first 1,000 successful requests free, then $2 per 1,000). SkyScout uses it for searches between two specific airports and the deal pages they lead to; the homepage, Explore, deal feeds and price history keep using Travelpayouts (when `TRAVELPAYOUTS_TOKEN` is set) or demo data, so Ignav usage stays small.
+
+1. Create an Ignav account and copy your **API key**.
+2. Set the environment variables (in Vercel: Project → Settings → Environment Variables):
+   - `FLIGHT_PROVIDER=ignav`
+   - `IGNAV_API_KEY=<your API key>` (server-only, never sent to the browser)
+3. Redeploy, then open `/api/ignav/test?from=DOH&to=LHR` (one billed request). `"ok": true` with sample fares means the key works.
+
+How it behaves:
+- Exact dates cost one request. A date window costs one "cheapest dates" request per length of stay plus up to three full searches for the cheapest date pairs. Results are cached for 30 minutes.
+- Deal ids look like `IG-DOH-LHR-20261110-20261126-economy-QR1_QR100-420`. Opening one re-prices that itinerary.
+- "Book this flight" goes through `/api/ignav/book`, which fetches the partner booking link only when clicked (also a billed request).
+- If Ignav errors (bad key, outage), SkyScout logs a warning and falls back to the base provider.
+
 ### Connecting another flight API
 
 1. Implement the methods in `src/lib/flights/real-provider.ts`, mapping the API's offers into the types in `src/lib/flights/types.ts`. Prices are per traveller; times are local wall-clock strings. Supply `typicalPrice` so savings can be computed, for example from `PriceHistory`.
@@ -245,7 +261,7 @@ Behind a proxy, Auth.js trusts the forwarded host (`trustHost: true`). Set `NEXT
 
 ### Environment variables
 
-See [`.env.example`](.env.example). Required: `DATABASE_URL`, `AUTH_SECRET`. Recommended: `NEXT_PUBLIC_SITE_URL`. Optional: `AUTH_GOOGLE_*`, `AUTH_GITHUB_*`, `FLIGHT_PROVIDER`, `TRAVELPAYOUTS_TOKEN`, `TRAVELPAYOUTS_MARKER`, `FLIGHT_API_*`, `CRON_SECRET`.
+See [`.env.example`](.env.example). Required: `DATABASE_URL`, `AUTH_SECRET`. Recommended: `NEXT_PUBLIC_SITE_URL`. Optional: `AUTH_GOOGLE_*`, `AUTH_GITHUB_*`, `FLIGHT_PROVIDER`, `TRAVELPAYOUTS_TOKEN`, `TRAVELPAYOUTS_MARKER`, `IGNAV_API_KEY`, `IGNAV_MARKET`, `FLIGHT_API_*`, `CRON_SECRET`.
 
 ---
 

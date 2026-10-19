@@ -69,7 +69,11 @@ export function FlightCard({ deal, party, linkQuery, showDestination }: FlightCa
         )}
         <p className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
           <Luggage className="size-3.5" aria-hidden="true" />
-          {deal.provider === "travelpayouts"
+          {deal.provider === "ignav"
+            ? deal.baggage.checkedBags > 0
+              ? `${deal.baggage.checkedBags} checked bag${deal.baggage.checkedBags > 1 ? "s" : ""} included · fare rules on the booking site`
+              : "Baggage and fare rules shown on the booking site"
+            : deal.provider === "travelpayouts"
             ? "Baggage and fare rules shown on the booking site"
             : deal.baggage.checkedBags > 0
               ? `${deal.baggage.checkedBags}× ${deal.baggage.checkedKg}kg checked bag included`

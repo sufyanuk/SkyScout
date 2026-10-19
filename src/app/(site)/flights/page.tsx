@@ -253,6 +253,12 @@ export default async function FlightsPage({ searchParams }: PageProps<"/flights"
               </div>
             </div>
 
+            {deals[0]?.provider === "ignav" && (
+              <p className="mb-4 rounded-2xl bg-card px-4 shadow-card py-2.5 text-sm text-muted-foreground">
+                Live fares, checked just now. Prices can change before you book; baggage and fare rules are shown on
+                the booking site.
+              </p>
+            )}
             {deals[0]?.provider === "travelpayouts" && (
               <p className="mb-4 rounded-2xl bg-card px-4 shadow-card py-2.5 text-sm text-muted-foreground">
                 Real fares found recently on Aviasales. Prices can change before you book; baggage and fare rules are

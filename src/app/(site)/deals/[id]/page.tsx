@@ -228,10 +228,12 @@ export default async function DealPage({ params, searchParams }: PageProps<"/dea
             <h2 id="fare" className="text-xl font-semibold tracking-tight">
               Baggage &amp; fare details
             </h2>
-            {deal.provider === "travelpayouts" ? (
+            {deal.provider === "travelpayouts" || deal.provider === "ignav" ? (
               <p className="mt-4 text-sm text-muted-foreground">
-                This fare comes from Aviasales price data, which doesn&apos;t include baggage allowance or change and
-                refund rules. You&apos;ll see them on the booking site before you pay.
+                {deal.provider === "ignav"
+                  ? `This is a live fare${deal.baggage.checkedBags > 0 ? ` with ${deal.baggage.checkedBags} checked bag${deal.baggage.checkedBags > 1 ? "s" : ""} included` : ""}. `
+                  : "This fare comes from Aviasales price data, which doesn't include baggage allowance or change and refund rules. "}
+                You&apos;ll see the full baggage allowance and change and refund rules on the booking site before you pay.
               </p>
             ) : (
               <>
@@ -358,8 +360,8 @@ export default async function DealPage({ params, searchParams }: PageProps<"/dea
               />
               {deal.bookingUrl && (
                 <p className="mt-2 text-xs text-muted-foreground">
-                  Fare recently found on Aviasales. Prices change often; the final price, baggage and fare rules are
-                  confirmed on the booking site.
+                  {deal.provider === "ignav" ? "Live fare, checked just now." : "Fare recently found on Aviasales."} Prices
+                  change often; the final price, baggage and fare rules are confirmed on the booking site.
                 </p>
               )}
               <div className="mt-3 grid grid-cols-2 gap-2">
