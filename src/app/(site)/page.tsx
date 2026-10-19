@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Price } from "@/components/common/price";
-import { ArrowRight, BellRing, CalendarRange, Coins, Globe2, ShieldCheck, Sparkle, TrendingDown } from "lucide-react";
+import { ArrowRight, BellRing, Sparkle } from "lucide-react";
 import { JsonLd } from "@/components/common/json-ld";
 import { DestinationArt } from "@/components/destinations/destination-art";
 import { DESTINATIONS } from "@/lib/catalog/destinations";
@@ -79,39 +79,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Why SkyScout */}
-      <section aria-labelledby="why-skyscout" className="border-t border-divider bg-card">
-        <div className="container-page grid gap-10 py-14 sm:py-20 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,2fr)] lg:gap-14">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Why SkyScout</p>
-            <h2 id="why-skyscout" className="mt-3 text-2xl font-bold tracking-tight text-balance sm:text-3xl">
-              Built to find you the lowest fare — not to sell you one.
-            </h2>
-            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-              We compare fares across your whole travel window and show how each one stacks up against what the route
-              usually costs. Free to use, no sign-up needed to search.
-            </p>
-            <Link
-              href={`/explore?from=${origin}`}
-              className="mt-6 inline-flex h-10 items-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
-            >
-              Start exploring <ArrowRight className="size-4" aria-hidden="true" />
-            </Link>
-          </div>
-          <ul className="grid gap-px overflow-hidden rounded-2xl border border-divider bg-divider sm:grid-cols-2 lg:grid-cols-3">
-            {BENEFITS.map(({ icon: Icon, title, text }) => (
-              <li key={title} className="bg-card p-6">
-                <span className="flex size-10 items-center justify-center rounded-lg bg-accent text-primary">
-                  <Icon className="size-5" aria-hidden="true" />
-                </span>
-                <h3 className="mt-4 text-sm font-semibold">{title}</h3>
-                <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{text}</p>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
       {/* Price alerts */}
       <section aria-labelledby="alerts-cta" className="-mb-24 border-t border-divider bg-card">
         <div className="container-page py-12 sm:py-14">
@@ -139,39 +106,6 @@ export default async function HomePage() {
     </>
   );
 }
-
-const BENEFITS = [
-  {
-    icon: CalendarRange,
-    title: "Flexible-date search",
-    text: "Give a departure and return window; we compare every day in it to find the cheapest combination.",
-  },
-  {
-    icon: TrendingDown,
-    title: "Know a real deal",
-    text: "Every fare is compared with what the route usually costs, so you see the saving at a glance.",
-  },
-  {
-    icon: Globe2,
-    title: "Search whole regions",
-    text: "Fly from a country or to a region — say, UAE to Europe — across every airport at once.",
-  },
-  {
-    icon: BellRing,
-    title: "Price alerts",
-    text: "Set a target and we watch the fares for you, so you don't have to keep checking.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "No booking fees from us",
-    text: "SkyScout is free. You book directly with trusted travel partners at the price shown there.",
-  },
-  {
-    icon: Coins,
-    title: "Your currency",
-    text: "See every price in your own currency — over 20 to choose from.",
-  },
-] as const;
 
 function FareCard({ quote, photo, origin }: { quote: DestinationQuote; photo?: Photo; origin: string }) {
   const deal = quote.cheapest;
