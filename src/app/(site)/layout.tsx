@@ -25,7 +25,9 @@ export default async function SiteLayout({ children }: LayoutProps<"/">) {
           Skip to content
         </a>
         <Header />
-        <main id="main" className="flex-1">
+        <main id="main" className="relative isolate flex-1">
+          {/* Sky photo band behind the top of every page. */}
+          <div aria-hidden="true" className="bg-sky-photo absolute inset-x-0 top-0 -z-10 h-80 sm:h-96" />
           {children}
         </main>
         <Footer />

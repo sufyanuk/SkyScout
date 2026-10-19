@@ -28,7 +28,7 @@ export function DealCard({
   return (
     <article
       className={cn(
-        "group relative flex flex-col overflow-hidden rounded-3xl border bg-card shadow-card transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lift",
+        "card-zoom group relative flex flex-col overflow-hidden rounded-3xl border bg-card shadow-card",
         className,
       )}
       data-priority={priority ? "" : undefined}

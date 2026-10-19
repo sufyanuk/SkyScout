@@ -114,7 +114,7 @@ function FareCard({ quote, photo, origin }: { quote: DestinationQuote; photo?: P
   return (
     <Link
       href={`/deals/${deal.id}`}
-      className="group flex flex-col rounded-xl border bg-card p-4 shadow-card transition hover:-translate-y-0.5 hover:shadow-lift"
+      className="card-zoom group flex flex-col rounded-xl border bg-card p-4 shadow-card"
     >
       <div className="flex items-start gap-3">
         <DestinationThumb code={quote.destination.code} photo={photo} alt={`${quote.destination.city}, ${quote.destination.country}`} />

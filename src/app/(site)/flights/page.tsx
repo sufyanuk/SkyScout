@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Price } from "@/components/common/price";
 import Link from "next/link";
 import { after } from "next/server";
-import { BellPlus, ChevronDown, PlaneTakeoff, SearchX } from "lucide-react";
+import { BellPlus, ChevronDown, Pencil, PlaneTakeoff, SearchX } from "lucide-react";
 import { EmptyState } from "@/components/common/empty-state";
 import { DealCard } from "@/components/flights/deal-card";
 import { FlightCard } from "@/components/flights/flight-card";
@@ -20,6 +20,7 @@ import { addDays, todayIso } from "@/lib/dates";
 import { getFlightProvider } from "@/lib/flights";
 import type { FlightSearchParams } from "@/lib/flights/types";
 import { CABIN_LABELS, formatDate, formatDateRange } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { PAGE_SIZE, parseSearchPage } from "@/lib/search-params";
 import { getHomeAirport } from "@/lib/services/preferences";
 import { recordPriceObservations, recordSearch } from "@/lib/services/searches";
@@ -59,6 +60,25 @@ function whenLabel(params: FlightSearchParams) {
     default:
       return "Any dates in the next 3 months";
   }
+}
+
+/** Short dates for the one-row search summary. */
+function datesLabel(params: FlightSearchParams) {
+  if (!params.departure) return "Flexible dates";
+  const end = params.departureEnd ?? params.departure;
+  const leave = end === params.departure ? formatDate(params.departure) : formatDateRange(params.departure, end);
+  if (params.oneWay) return leave;
+  if (params.returnFrom && params.returnUntil) return `${leave} → ${formatDateRange(params.returnFrom, params.returnUntil)}`;
+  return params.returnDate ? `${leave} → ${formatDate(params.returnDate)}` : leave;
+}
+
+function SummaryField({ label, value, className }: { label: string; value: string; className?: string }) {
+  return (
+    <span className={cn("flex min-w-0 flex-1 flex-col justify-center rounded-xl border px-3 py-2", className)}>
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
+      <span className="truncate text-sm font-semibold">{value}</span>
+    </span>
+  );
 }
 
 /** Date windows for the search box; single dates become one-day ranges. */
@@ -165,105 +185,117 @@ export default async function FlightsPage({ searchParams }: PageProps<"/flights"
 
   return (
     <SearchNavigationProvider query={query}>
-      <div className="border-b bg-gradient-to-b from-sky to-background">
-        <div className="container-page py-6 sm:py-8">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <p className="flex items-center gap-2 text-sm font-medium text-primary">
-                <PlaneTakeoff className="size-4" aria-hidden="true" /> {params.from.length === 3 ? params.from : locationLabel(params.from)} →{" "}
-                {params.to ? (params.to.length === 3 ? params.to : locationLabel(params.to)) : "Anywhere"}
-              </p>
-              <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-4xl">{routeTitle(params)}</h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {whenLabel(params)} · {travelers} traveller{travelers > 1 ? "s" : ""} · {CABIN_LABELS[params.cabin]}
-                {filters.bags.cabin + filters.bags.checked > 0
-                  ? ` · prices incl. ${[filters.bags.cabin ? "cabin bag" : "", filters.bags.checked ? `${filters.bags.checked} checked bag${filters.bags.checked > 1 ? "s" : ""}` : ""].filter(Boolean).join(" + ")}`
-                  : ""}
-                {params.oneWay ? " · One-way" : ""}
-              </p>
-            </div>
-            <Button asChild variant="outline" size="sm" className="h-9">
-              <Link href={alertHref}>
-                <BellPlus /> Track prices
-              </Link>
-            </Button>
+      <div className="container-page pt-6 pb-8 sm:pt-10">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="flex items-center gap-2 text-sm font-medium text-primary">
+              <PlaneTakeoff className="size-4" aria-hidden="true" /> {params.from.length === 3 ? params.from : locationLabel(params.from)} →{" "}
+              {params.to ? (params.to.length === 3 ? params.to : locationLabel(params.to)) : "Anywhere"}
+            </p>
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-4xl">{routeTitle(params)}</h1>
+            <p className="mt-1 text-sm text-foreground/75">
+              {whenLabel(params)} · {travelers} traveller{travelers > 1 ? "s" : ""} · {CABIN_LABELS[params.cabin]}
+              {filters.bags.cabin + filters.bags.checked > 0
+                ? ` · prices incl. ${[filters.bags.cabin ? "cabin bag" : "", filters.bags.checked ? `${filters.bags.checked} checked bag${filters.bags.checked > 1 ? "s" : ""}` : ""].filter(Boolean).join(" + ")}`
+                : ""}
+              {params.oneWay ? " · One-way" : ""}
+            </p>
           </div>
-          <div className="mt-5 hidden lg:block">{searchBox}</div>
-          <details className="group mt-4 lg:hidden">
-            <summary className="flex cursor-pointer list-none items-center justify-between rounded-2xl border bg-card px-4 py-3 text-sm font-semibold shadow-sm [&::-webkit-details-marker]:hidden">
-              Edit search
-              <ChevronDown className="size-4 transition-transform group-open:rotate-180" aria-hidden="true" />
-            </summary>
-            <div className="mt-3">{searchBox}</div>
-          </details>
+          <Button asChild variant="outline" size="sm" className="h-9 bg-card">
+            <Link href={alertHref}>
+              <BellPlus /> Track prices
+            </Link>
+          </Button>
         </div>
+        {/* One-row summary of the search; expands to the full form for changes. */}
+        <details className="group mt-5">
+          <summary className="flex cursor-pointer list-none items-stretch gap-2 rounded-2xl bg-card p-2 shadow-float [&::-webkit-details-marker]:hidden">
+            <SummaryField label="From" value={locationLabel(params.from)} />
+            <SummaryField label="To" value={params.to ? locationLabel(params.to) : "Anywhere"} />
+            <SummaryField label="Dates" value={datesLabel(params)} className="hidden md:flex" />
+            <SummaryField
+              label="Travellers & cabin"
+              value={`${travelers} traveller${travelers > 1 ? "s" : ""} · ${CABIN_LABELS[params.cabin]}`}
+              className="hidden lg:flex"
+            />
+            <span className="ml-auto flex shrink-0 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground sm:px-5">
+              <Pencil className="size-4" aria-hidden="true" />
+              <span className="hidden sm:inline sm:group-open:hidden">Modify search</span>
+              <span className="hidden sm:group-open:inline">Close</span>
+              <ChevronDown className="size-4 transition-transform group-open:rotate-180" aria-hidden="true" />
+            </span>
+          </summary>
+          <div className="mt-3">{searchBox}</div>
+        </details>
       </div>
 
-      <div className="container-page py-8">
-        <section aria-labelledby="results-heading" className="min-w-0">
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 id="results-heading" className="font-semibold" aria-live="polite">
-                {deals.length} flight{deals.length === 1 ? "" : "s"}
-                {multiDestination && deals.length > 0 ? ` to ${new Set(deals.map((d) => d.destination.code)).size} destinations` : ""}
-              </h2>
-              {cheapest !== null && <p className="text-sm text-muted-foreground">Cheapest from <Price amount={cheapest} /> per person</p>}
-            </div>
-            <div className="flex items-center gap-2">
-              <SortDropdown />
-              <div className="hidden sm:block">
-                <ViewToggle />
+      <div className="bg-results border-t">
+        <div className="container-page py-8">
+          <section aria-labelledby="results-heading" className="min-w-0">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 id="results-heading" className="font-semibold" aria-live="polite">
+                  {deals.length} flight{deals.length === 1 ? "" : "s"}
+                  {multiDestination && deals.length > 0 ? ` to ${new Set(deals.map((d) => d.destination.code)).size} destinations` : ""}
+                </h2>
+                {cheapest !== null && <p className="text-sm text-muted-foreground">Cheapest from <Price amount={cheapest} /> per person</p>}
+              </div>
+              <div className="flex items-center gap-2">
+                <SortDropdown />
+                <div className="hidden sm:block">
+                  <ViewToggle />
+                </div>
               </div>
             </div>
-          </div>
 
-          {deals[0]?.provider === "travelpayouts" && (
-            <p className="mb-4 rounded-2xl bg-muted px-4 py-2.5 text-sm text-muted-foreground">
-              Real fares found recently on Aviasales. Prices can change before you book; baggage and fare rules are
-              shown on the booking site.
-            </p>
-          )}
-          <PendingResults>
-            {deals.length === 0 ? (
-              <EmptyState
-                icon={SearchX}
-                title="No flights match this search"
-                description="Try wider date ranges, a longer stay or a higher budget — or let us show you anywhere that's cheap."
-                action={
-                  <>
-                    <Button asChild>
-                      <Link href={`/flights?from=${params.from}&to=${params.to ?? "anywhere"}`}>Reset search</Link>
-                    </Button>
-                    <Button asChild variant="outline">
-                      <Link href={`/explore?from=${params.origins[0]}`}>Explore anywhere</Link>
-                    </Button>
-                  </>
-                }
-              />
-            ) : view === "grid" ? (
-              <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                {visible.map((deal) => (
-                  <DealCard key={deal.id} deal={deal} />
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {visible.map((deal) => (
-                  <FlightCard
-                    key={deal.id}
-                    deal={deal}
-                    party={party}
-                    linkQuery={linkQuery}
-                    showDestination={multiDestination}
-                  />
-                ))}
-              </div>
+            {deals[0]?.provider === "travelpayouts" && (
+              <p className="mb-4 rounded-2xl bg-muted px-4 py-2.5 text-sm text-muted-foreground">
+                Real fares found recently on Aviasales. Prices can change before you book; baggage and fare rules are
+                shown on the booking site.
+              </p>
             )}
-            {deals.length > visible.length && (
-              <LoadMore nextLimit={limit + PAGE_SIZE} count={Math.min(PAGE_SIZE, deals.length - visible.length)} />
-            )}
-          </PendingResults>
-        </section>
+            <PendingResults>
+              {deals.length === 0 ? (
+                <EmptyState
+                  icon={SearchX}
+                  title="No flights match this search"
+                  description="Try wider date ranges, a longer stay or a higher budget — or let us show you anywhere that's cheap."
+                  action={
+                    <>
+                      <Button asChild>
+                        <Link href={`/flights?from=${params.from}&to=${params.to ?? "anywhere"}`}>Reset search</Link>
+                      </Button>
+                      <Button asChild variant="outline">
+                        <Link href={`/explore?from=${params.origins[0]}`}>Explore anywhere</Link>
+                      </Button>
+                    </>
+                  }
+                />
+              ) : view === "grid" ? (
+                <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                  {visible.map((deal) => (
+                    <DealCard key={deal.id} deal={deal} />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {visible.map((deal) => (
+                    <FlightCard
+                      key={deal.id}
+                      deal={deal}
+                      party={party}
+                      linkQuery={linkQuery}
+                      showDestination={multiDestination}
+                    />
+                  ))}
+                </div>
+              )}
+              {deals.length > visible.length && (
+                <LoadMore nextLimit={limit + PAGE_SIZE} count={Math.min(PAGE_SIZE, deals.length - visible.length)} />
+              )}
+            </PendingResults>
+          </section>
+        </div>
       </div>
     </SearchNavigationProvider>
   );

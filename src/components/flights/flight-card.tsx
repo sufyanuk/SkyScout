@@ -27,7 +27,7 @@ export function FlightCard({ deal, party, linkQuery, showDestination }: FlightCa
   const perPerson = totalPrice(deal);
   const groupSize = party.seated + party.infants;
   return (
-    <article className="group relative grid gap-4 rounded-3xl border bg-card p-4 shadow-card transition-shadow hover:shadow-lift sm:grid-cols-[1fr_210px] sm:p-5">
+    <article className="card-zoom group relative grid gap-4 rounded-2xl border bg-card p-4 shadow-card sm:grid-cols-[1fr_210px] sm:p-5">
       <div className="min-w-0 space-y-4">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <AirlineMark airline={deal.airline} />
@@ -122,9 +122,9 @@ export function FlightCard({ deal, party, linkQuery, showDestination }: FlightCa
           </div>
           <Link
             href={href}
-            className="inline-flex h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors after:absolute after:inset-0 after:content-[''] hover:bg-primary/90 focus-visible:ring-[3px] focus-visible:ring-ring/40 focus-visible:outline-none"
+            className="inline-flex h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl bg-navy px-5 text-sm font-semibold text-white transition-colors after:absolute after:inset-0 after:content-[''] hover:bg-navy/90 focus-visible:ring-[3px] focus-visible:ring-ring/40 focus-visible:outline-none"
           >
-            View deal <ArrowRight className="size-4" aria-hidden="true" />
+            Select <ArrowRight className="size-4" aria-hidden="true" />
             <span className="sr-only">
               : {routeLabel} with {carriers}, <Price amount={perPerson} />
             </span>
