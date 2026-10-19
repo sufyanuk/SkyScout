@@ -240,7 +240,7 @@ export function SearchBox({ initial, today, variant = "hero", keep, onSubmitted,
               onClick={() => update({ oneWay: opt.oneWay })}
               className={cn(
                 "rounded-full px-3.5 py-1.5 text-[13px] font-semibold text-muted-foreground transition",
-                v.oneWay === opt.oneWay && "bg-card text-foreground shadow-sm",
+                v.oneWay === opt.oneWay && "bg-card text-primary shadow-sm",
               )}
             >
               {opt.label}

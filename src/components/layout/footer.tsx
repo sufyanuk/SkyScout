@@ -7,7 +7,7 @@ const POPULAR = ["bangkok", "istanbul", "london", "tbilisi", "bali", "maldives"]
 export function Footer() {
   const popular = DESTINATIONS.filter((d) => POPULAR.includes(d.slug));
   return (
-    <footer className="mt-24 border-t border-divider bg-card pb-24 md:pb-0">
+    <footer className="mt-24 border-t bg-card pb-24 md:pb-0">
       <div className="container-page grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-3">
           <Logo />
