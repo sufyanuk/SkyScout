@@ -8,7 +8,7 @@
  */
 :root {
   --radius: 0.75rem;
-  --background: #f7f9fd;
+  --background: #ffffff;
   --foreground: #0f1b3d;
   --card: #ffffff;
   --card-foreground: #0f1b3d;
@@ -140,8 +140,8 @@
    washed out on the left so the headline stays readable. */
 @utility bg-sky-photo {
   background:
-    linear-gradient(90deg, rgb(247 249 253 / 0.8) 0%, rgb(247 249 253 / 0.45) 40%, rgb(247 249 253 / 0) 70%),
-    linear-gradient(180deg, rgb(247 249 253 / 0) 70%, var(--background) 100%),
+    linear-gradient(90deg, rgb(255 255 255 / 0.8) 0%, rgb(255 255 255 / 0.45) 40%, rgb(255 255 255 / 0) 70%),
+    linear-gradient(180deg, rgb(255 255 255 / 0) 70%, var(--background) 100%),
     url("https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=2400&q=75") center 40% / cover no-repeat,
     linear-gradient(180deg, #9fb8de 0%, #e9d8cf 100%);
 }
