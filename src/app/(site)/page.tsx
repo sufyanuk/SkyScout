@@ -57,9 +57,9 @@ export default async function HomePage() {
       </section>
 
       {/* Cheapest flights from your airport */}
-      <section aria-labelledby="from-airport" className="border-b bg-card">
+      <section aria-labelledby="from-airport" className="bg-card">
         <div className="container-page py-14 sm:py-20">
-          <div className="mb-8 flex items-end justify-between gap-4">
+          <div className="mb-8 flex items-end justify-between gap-4 border-b border-divider pb-6">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Deals from your airport</p>
               <h2 id="from-airport" className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
@@ -80,7 +80,7 @@ export default async function HomePage() {
       </section>
 
       {/* Why SkyScout */}
-      <section aria-labelledby="why-skyscout" className="border-b bg-background">
+      <section aria-labelledby="why-skyscout" className="border-t border-divider bg-card">
         <div className="container-page grid gap-10 py-14 sm:py-20 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,2fr)] lg:gap-14">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Why SkyScout</p>
@@ -98,7 +98,7 @@ export default async function HomePage() {
               Start exploring <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
           </div>
-          <ul className="grid gap-px overflow-hidden rounded-2xl border bg-border sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="grid gap-px overflow-hidden rounded-2xl border border-divider bg-divider sm:grid-cols-2 lg:grid-cols-3">
             {BENEFITS.map(({ icon: Icon, title, text }) => (
               <li key={title} className="bg-card p-6">
                 <span className="flex size-10 items-center justify-center rounded-lg bg-accent text-primary">
@@ -113,23 +113,23 @@ export default async function HomePage() {
       </section>
 
       {/* Price alerts */}
-      <section aria-labelledby="alerts-cta" className="-mb-24 bg-card">
+      <section aria-labelledby="alerts-cta" className="-mb-24 border-t border-divider bg-card">
         <div className="container-page py-12 sm:py-14">
-          <div className="flex flex-col items-start justify-between gap-6 rounded-2xl bg-charcoal-hero px-6 py-8 text-white sm:flex-row sm:items-center sm:px-10">
+          <div className="flex flex-col items-start justify-between gap-6 rounded-2xl border border-divider bg-card px-6 py-8 sm:flex-row sm:items-center sm:px-10">
             <div className="flex items-start gap-4">
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white/10">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
                 <BellRing className="size-5" aria-hidden="true" />
               </span>
               <div>
                 <h2 id="alerts-cta" className="text-lg font-semibold">
                   Not ready to book?
                 </h2>
-                <p className="mt-1 text-sm text-white/70">Set a target fare and we&apos;ll tell you when it drops.</p>
+                <p className="mt-1 text-sm text-muted-foreground">Set a target fare and we&apos;ll tell you when it drops.</p>
               </div>
             </div>
             <Link
               href={`/alerts?from=${origin}&to=LHR&max=350`}
-              className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-white px-6 text-sm font-semibold text-foreground transition hover:bg-white/90"
+              className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
             >
               Create a price alert <ArrowRight className="size-4" aria-hidden="true" />
             </Link>

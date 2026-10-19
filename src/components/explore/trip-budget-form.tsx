@@ -52,7 +52,7 @@ export function TripBudgetForm({
   return (
     <form
       onSubmit={submit}
-      className="relative overflow-hidden rounded-2xl bg-navy-hero p-5 text-white shadow-lift sm:p-6"
+      className="relative overflow-hidden rounded-2xl bg-charcoal-hero p-5 text-white shadow-lift sm:p-6"
       aria-label="Plan by total trip budget"
     >
       <div className="relative flex flex-wrap items-end gap-x-4 gap-y-3">
