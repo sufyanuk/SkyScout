@@ -21,6 +21,8 @@ const EUROZONE = ["AT", "BE", "CY", "DE", "EE", "ES", "FI", "FR", "GR", "HR", "I
 const LOCAL_CURRENCY: Record<string, CurrencyCode> = {
   QA: "QAR", AE: "AED", SA: "SAR", OM: "OMR", KW: "KWD", BH: "BHD", IN: "INR", PK: "PKR", TR: "TRY",
   SG: "SGD", AU: "AUD", CA: "CAD", JP: "JPY", GB: "GBP", US: "USD",
+  TH: "THB", MY: "MYR", ID: "IDR", HK: "HKD", LK: "LKR", MV: "MVR", NP: "NPR", EG: "EGP",
+  GE: "GEL", AZ: "AZN", CZ: "CZK", ZA: "ZAR", TZ: "TZS",
 };
 
 /** The local currency for a country, when SkyScout supports it. */

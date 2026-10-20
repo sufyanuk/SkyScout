@@ -20,6 +20,19 @@ export const CURRENCIES = [
   { code: "AUD", name: "Australian Dollar", rate: 1.51, symbol: "A$" },
   { code: "CAD", name: "Canadian Dollar", rate: 1.37, symbol: "C$" },
   { code: "JPY", name: "Japanese Yen", rate: 149, symbol: "¥" },
+  { code: "THB", name: "Thai Baht", rate: 34, symbol: "฿" },
+  { code: "MYR", name: "Malaysian Ringgit", rate: 4.4, symbol: "RM" },
+  { code: "IDR", name: "Indonesian Rupiah", rate: 15800, symbol: "Rp" },
+  { code: "HKD", name: "Hong Kong Dollar", rate: 7.8, symbol: "HK$" },
+  { code: "LKR", name: "Sri Lankan Rupee", rate: 300, symbol: "Rs" },
+  { code: "MVR", name: "Maldivian Rufiyaa", rate: 15.4, symbol: "Rf" },
+  { code: "NPR", name: "Nepalese Rupee", rate: 133, symbol: "रू" },
+  { code: "EGP", name: "Egyptian Pound", rate: 48.5, symbol: "E£" },
+  { code: "GEL", name: "Georgian Lari", rate: 2.7, symbol: "₾" },
+  { code: "AZN", name: "Azerbaijani Manat", rate: 1.7, symbol: "₼" },
+  { code: "CZK", name: "Czech Koruna", rate: 23, symbol: "Kč" },
+  { code: "ZAR", name: "South African Rand", rate: 18.2, symbol: "R" },
+  { code: "TZS", name: "Tanzanian Shilling", rate: 2700, symbol: "TSh" },
 ] as const;
 
 export type CurrencyCode = (typeof CURRENCIES)[number]["code"];

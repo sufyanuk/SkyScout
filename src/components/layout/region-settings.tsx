@@ -46,24 +46,23 @@ export function RegionSettings({ countryCode, currency }: { countryCode: string;
     setOpen(next);
   }
 
-  function pickCountry(code: string) {
-    setCountry(code);
-    // Suggest the local currency; the visitor can still change it.
-    const local = currencyForCountry(code);
-    if (local) setMoney(local);
-  }
-
-  function save() {
+  /** Choices apply straight away — no separate save step. */
+  function apply(nextCountry: string, nextCurrency: string) {
+    setCountry(nextCountry);
+    setMoney(nextCurrency);
     startTransition(async () => {
-      const result = await setRegion(country, money);
+      const result = await setRegion(nextCountry, nextCurrency);
       if (!result.ok) {
         toast.error(result.error ?? "Couldn't save your settings");
         return;
       }
-      setOpen(false);
       router.refresh();
     });
   }
+
+  // A new country switches to its local currency; the visitor can still pick another.
+  const pickCountry = (code: string) => apply(code, currencyForCountry(code) ?? money);
+  const pickCurrency = (code: string) => apply(country, code);
 
   return (
     <Dialog open={open} onOpenChange={openChange}>
@@ -93,7 +92,10 @@ export function RegionSettings({ countryCode, currency }: { countryCode: string;
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Regional settings</DialogTitle>
-          <DialogDescription>Your country sets where flights depart from; prices are shown in your currency.</DialogDescription>
+          <DialogDescription>
+            Your country sets where flights depart from and switches prices to its currency. Changes apply straight
+            away.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -111,7 +113,7 @@ export function RegionSettings({ countryCode, currency }: { countryCode: string;
 
           <div className="space-y-1.5">
             <Label htmlFor="region-country">Country / region</Label>
-            <Select value={country} onValueChange={pickCountry}>
+            <Select value={country} onValueChange={pickCountry} disabled={pending}>
               <SelectTrigger id="region-country" className="w-full">
                 <SelectValue />
               </SelectTrigger>
@@ -130,7 +132,7 @@ export function RegionSettings({ countryCode, currency }: { countryCode: string;
 
           <div className="space-y-1.5">
             <Label htmlFor="region-currency">Currency</Label>
-            <Select value={money} onValueChange={setMoney}>
+            <Select value={money} onValueChange={pickCurrency} disabled={pending}>
               <SelectTrigger id="region-currency" className="w-full">
                 <SelectValue />
               </SelectTrigger>
@@ -145,12 +147,14 @@ export function RegionSettings({ countryCode, currency }: { countryCode: string;
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => setOpen(false)} disabled={pending}>
-            Cancel
-          </Button>
-          <Button onClick={save} disabled={pending}>
-            {pending && <Loader2 className="animate-spin" />} Save
+        <DialogFooter className="items-center">
+          {pending && (
+            <span className="mr-auto flex items-center gap-2 text-sm text-muted-foreground" role="status">
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" /> Updating prices…
+            </span>
+          )}
+          <Button onClick={() => setOpen(false)} disabled={pending}>
+            Done
           </Button>
         </DialogFooter>
       </DialogContent>
