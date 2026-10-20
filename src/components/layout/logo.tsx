@@ -22,7 +22,7 @@ export function Logo({ className }: { className?: string }) {
   return (
     <Link href="/" className={cn("group flex items-center gap-2 rounded-xl", className)} aria-label="SkyScout home">
       <LogoMark className="transition-transform group-hover:-rotate-6" />
-      <span className="text-lg font-semibold tracking-tight">
+      <span className="text-base font-semibold tracking-tight sm:text-lg">
         Sky<span className="text-primary">Scout</span>
       </span>
     </Link>

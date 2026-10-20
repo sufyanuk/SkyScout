@@ -298,7 +298,7 @@ export default async function DealPage({ params, searchParams }: PageProps<"/dea
 
         {/* Price panel */}
         <aside aria-label="Price and booking" className="lg:row-span-2">
-          <div className="sticky top-32 space-y-4">
+          <div className="sticky top-24 space-y-4">
             <div className="rounded-2xl border bg-card p-6 shadow-lift">
               <SavingsBadge percent={deal.savingsPercent} />
               <p className="mt-3 text-5xl font-semibold tracking-tight tabular-nums">
@@ -411,7 +411,7 @@ export default async function DealPage({ params, searchParams }: PageProps<"/dea
       </div>
 
       {/* Mobile: keep price and CTA in reach above the tab bar */}
-      <div className="fixed inset-x-0 bottom-[calc(61px+env(safe-area-inset-bottom))] z-30 md:bottom-0 border-t bg-card/95 px-4 py-3 shadow-float backdrop-blur-lg lg:hidden">
+      <div className="fixed inset-x-0 bottom-[calc(61px+env(safe-area-inset-bottom))] z-30 lg:bottom-0 border-t bg-card/95 px-4 py-3 shadow-float backdrop-blur-lg lg:hidden">
         <div className="mx-auto flex max-w-xl items-center justify-between gap-3">
           <div>
             <p className="text-xl font-semibold tabular-nums leading-tight">

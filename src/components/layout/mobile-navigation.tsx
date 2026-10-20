@@ -11,7 +11,7 @@ export function MobileNavigation() {
   return (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-40 bg-card/95 shadow-[0_-1px_8px_rgb(15_27_61/0.06)] pb-[env(safe-area-inset-bottom)] backdrop-blur-lg md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 bg-card/95 shadow-[0_-1px_8px_rgb(15_27_61/0.06)] pb-[env(safe-area-inset-bottom)] backdrop-blur-lg lg:hidden"
     >
       <ul className="mx-auto grid max-w-md grid-cols-5">
         {MOBILE_NAV.map(({ href, label, icon: Icon }) => {

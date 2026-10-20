@@ -23,7 +23,7 @@ function Flag({ code, className }: { code: string; className?: string }) {
       width={20}
       height={14}
       loading="lazy"
-      className={className ?? "h-3.5 w-5 rounded-[2px] object-cover shadow-[0_0_0_1px_rgb(0_0_0/0.08)]"}
+      className={className ?? "h-3.5 w-5 shrink-0 rounded-[2px] object-cover shadow-[0_0_0_1px_rgb(0_0_0/0.08)]"}
     />
   );
 }
@@ -70,21 +70,21 @@ export function RegionSettings({ countryCode, currency }: { countryCode: string;
         <button
           type="button"
           aria-label={`Regional settings: ${LANGUAGE}, ${current?.name ?? countryCode}, ${currency}`}
-          className="flex h-7 items-center gap-2 rounded-full bg-accent px-3.5 text-[12px] font-medium text-foreground transition-colors hover:bg-primary/15"
+          className="flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-accent px-2 text-[12px] sm:gap-2 sm:px-3.5 font-medium text-foreground transition-colors hover:bg-primary/15"
         >
-          <span className="hidden sm:inline">{LANGUAGE}</span>
-          <span aria-hidden="true" className="hidden text-foreground/30 sm:inline">
+          <span className="hidden xl:inline">{LANGUAGE}</span>
+          <span aria-hidden="true" className="hidden text-foreground/30 xl:inline">
             |
           </span>
           <span className="flex items-center gap-1.5">
             <Flag code={countryCode} />
-            <span className="hidden sm:inline">{current?.name}</span>
+            <span className="hidden xl:inline">{current?.name}</span>
           </span>
-          <span aria-hidden="true" className="text-foreground/30">
+          <span aria-hidden="true" className="hidden text-foreground/30 min-[400px]:inline">
             |
           </span>
           <span className="flex items-center gap-1">
-            {symbol && symbol !== "$" && <span>{symbol}</span>}
+            {symbol && symbol !== "$" && <span className="hidden xl:inline">{symbol}</span>}
             <span>{currency}</span>
           </span>
         </button>
