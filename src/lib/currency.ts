@@ -4,22 +4,22 @@
  * replacing RATES (e.g. refreshed daily on the server).
  */
 export const CURRENCIES = [
-  { code: "USD", name: "US Dollar", rate: 1 },
-  { code: "EUR", name: "Euro", rate: 0.92 },
-  { code: "GBP", name: "British Pound", rate: 0.79 },
-  { code: "QAR", name: "Qatari Riyal", rate: 3.64 },
-  { code: "AED", name: "UAE Dirham", rate: 3.6725 },
-  { code: "SAR", name: "Saudi Riyal", rate: 3.75 },
-  { code: "OMR", name: "Omani Rial", rate: 0.385 },
-  { code: "KWD", name: "Kuwaiti Dinar", rate: 0.307 },
-  { code: "BHD", name: "Bahraini Dinar", rate: 0.376 },
-  { code: "INR", name: "Indian Rupee", rate: 83.4 },
-  { code: "PKR", name: "Pakistani Rupee", rate: 278 },
-  { code: "TRY", name: "Turkish Lira", rate: 34.2 },
-  { code: "SGD", name: "Singapore Dollar", rate: 1.34 },
-  { code: "AUD", name: "Australian Dollar", rate: 1.51 },
-  { code: "CAD", name: "Canadian Dollar", rate: 1.37 },
-  { code: "JPY", name: "Japanese Yen", rate: 149 },
+  { code: "USD", name: "US Dollar", rate: 1, symbol: "$" },
+  { code: "EUR", name: "Euro", rate: 0.92, symbol: "€" },
+  { code: "GBP", name: "British Pound", rate: 0.79, symbol: "£" },
+  { code: "QAR", name: "Qatari Riyal", rate: 3.64, symbol: "ر.ق." },
+  { code: "AED", name: "UAE Dirham", rate: 3.6725, symbol: "د.إ" },
+  { code: "SAR", name: "Saudi Riyal", rate: 3.75, symbol: "ر.س" },
+  { code: "OMR", name: "Omani Rial", rate: 0.385, symbol: "ر.ع." },
+  { code: "KWD", name: "Kuwaiti Dinar", rate: 0.307, symbol: "د.ك" },
+  { code: "BHD", name: "Bahraini Dinar", rate: 0.376, symbol: "د.ب" },
+  { code: "INR", name: "Indian Rupee", rate: 83.4, symbol: "₹" },
+  { code: "PKR", name: "Pakistani Rupee", rate: 278, symbol: "₨" },
+  { code: "TRY", name: "Turkish Lira", rate: 34.2, symbol: "₺" },
+  { code: "SGD", name: "Singapore Dollar", rate: 1.34, symbol: "S$" },
+  { code: "AUD", name: "Australian Dollar", rate: 1.51, symbol: "A$" },
+  { code: "CAD", name: "Canadian Dollar", rate: 1.37, symbol: "C$" },
+  { code: "JPY", name: "Japanese Yen", rate: 149, symbol: "¥" },
 ] as const;
 
 export type CurrencyCode = (typeof CURRENCIES)[number]["code"];
