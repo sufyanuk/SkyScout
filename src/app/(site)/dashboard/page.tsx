@@ -82,7 +82,7 @@ export default async function DashboardPage() {
             )}
           </section>
 
-          <section aria-labelledby="history-title" id="history" className="scroll-mt-24">
+          <section aria-labelledby="history-title" id="history" className="scroll-mt-32">
             <h2 id="history-title" className="mb-4 text-xl font-semibold">
               Search history
             </h2>

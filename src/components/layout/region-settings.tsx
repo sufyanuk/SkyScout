@@ -71,15 +71,21 @@ export function RegionSettings({ countryCode, currency }: { countryCode: string;
         <button
           type="button"
           aria-label={`Regional settings: ${LANGUAGE}, ${current?.name ?? countryCode}, ${currency}`}
-          className="flex h-9 items-center gap-1.5 rounded-full px-2 text-[13px] sm:gap-2.5 sm:px-3 font-medium text-foreground transition-colors hover:bg-muted"
+          className="flex h-7 items-center gap-2 rounded-full bg-accent px-3.5 text-[12px] font-medium text-foreground transition-colors hover:bg-primary/15"
         >
-          <span className="hidden xl:inline">{LANGUAGE}</span>
+          <span className="hidden sm:inline">{LANGUAGE}</span>
+          <span aria-hidden="true" className="hidden text-foreground/30 sm:inline">
+            |
+          </span>
           <span className="flex items-center gap-1.5">
             <Flag code={countryCode} />
-            <span className="hidden lg:inline">{current?.name}</span>
+            <span className="hidden sm:inline">{current?.name}</span>
+          </span>
+          <span aria-hidden="true" className="text-foreground/30">
+            |
           </span>
           <span className="flex items-center gap-1">
-            {symbol && symbol !== "$" && <span className="hidden sm:inline">{symbol}</span>}
+            {symbol && symbol !== "$" && <span>{symbol}</span>}
             <span>{currency}</span>
           </span>
         </button>

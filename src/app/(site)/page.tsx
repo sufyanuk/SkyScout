@@ -51,7 +51,7 @@ export default async function HomePage() {
           <p className="mt-4 max-w-md text-sm leading-relaxed text-foreground/75 sm:text-base">
             Tell us your travel window and destination — we&apos;ll find the best-value days to go.
           </p>
-          <SearchBox className="mt-10 border-white shadow-float sm:mt-20" today={today} initial={{ from: origin }} />
+          <SearchBox key={origin} className="mt-10 border-white shadow-float sm:mt-20" today={today} initial={{ from: origin }} />
         </div>
       </section>
 

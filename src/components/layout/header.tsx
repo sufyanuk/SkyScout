@@ -14,13 +14,16 @@ export async function Header() {
   const countryCode = getAirport(home)?.countryCode ?? "QA";
   return (
     <header className="sticky top-0 z-40 bg-white/90 shadow-[0_1px_8px_rgb(15_27_61/0.06)] backdrop-blur-xl">
+      {/* Regional settings, top left. */}
+      <div className="container-page flex h-9 items-end">
+        <RegionSettings countryCode={countryCode} currency={currency} />
+      </div>
       <div className="container-page flex h-16 items-center justify-between gap-2 sm:gap-4">
         <div className="flex items-center gap-6">
           <Logo />
           <NavLinks />
         </div>
         <div className="flex items-center gap-1 sm:gap-2">
-          <RegionSettings countryCode={countryCode} currency={currency} />
           {user ? (
             <UserMenu user={user} />
           ) : (

@@ -298,7 +298,7 @@ export default async function DealPage({ params, searchParams }: PageProps<"/dea
 
         {/* Price panel */}
         <aside aria-label="Price and booking" className="lg:row-span-2">
-          <div className="sticky top-24 space-y-4">
+          <div className="sticky top-32 space-y-4">
             <div className="rounded-2xl border bg-card p-6 shadow-lift">
               <SavingsBadge percent={deal.savingsPercent} />
               <p className="mt-3 text-5xl font-semibold tracking-tight tabular-nums">
